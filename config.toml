@@ -12,7 +12,7 @@ algorithm = "sha256"
 short = "%Y-%m-%d"
 long = "%d, %b %Y"
 
-[accounts.types] 
+[accounts.types]
 # Balance Sheet: Asset Accounts
 NON_CURRENT_ASSET.label = "Non Current Asset"
 NON_CURRENT_ASSET.account_code = 0 # 0 - 999
@@ -124,7 +124,7 @@ balance_sheet.title = "Balance Sheet"
 cashflow_statement.title = "Cashflow Statement"
 trial_balance.title = "Trial Balance"
 
-[reports.aging_schedule_brackets] # bracket label = max age 
+[reports.aging_schedule_brackets] # bracket label = max age
 "current" = 30
 "31 - 90 days" = 90
 "91 - 180 days" = 180
@@ -133,7 +133,7 @@ trial_balance.title = "Trial Balance"
 "365+ (bad debts)" = 1000000000 # (infinity)
 
 [reports.income_statement.sections]
-OPERATING_REVENUES.label = "Operating Revenues" 
+OPERATING_REVENUES.label = "Operating Revenues"
 OPERATING_REVENUES.account_types = ["OPERATING_REVENUE"]
 
 NON_OPERATING_REVENUES.label = "Non Operating Revenues"
@@ -153,13 +153,13 @@ NET_PROFIT = "Net Profit"
 
 
 [reports.balance_sheet.sections]
-ASSETS.label = "Assets" 
+ASSETS.label = "Assets"
 ASSETS.account_types = ["NON_CURRENT_ASSET", "CONTRA_ASSET", "INVENTORY", "BANK", "CURRENT_ASSET", "RECEIVABLE"]
 
-LIABILITIES.label = "Liabilities" 
+LIABILITIES.label = "Liabilities"
 LIABILITIES.account_types = ["NON_CURRENT_LIABILITY", "CONTROL", "CURRENT_LIABILITY", "PAYABLE"]
 
-EQUITY.label = "Equity" 
+EQUITY.label = "Equity"
 EQUITY.account_types = ["EQUITY", "RECONCILIATION"]
 
 [reports.balance_sheet.results]
@@ -171,12 +171,12 @@ TOTAL_EQUITY = "Total Equity"
 OPERATING_CASH_FLOW.label = "Operating Cash Flow"
 OPERATING_CASH_FLOW.sub_sections = [
     "NET_PROFIT",
-    "PROVISIONS", 
-    "RECEIVABLES", 
-    "PAYABLES", 
-    "CURRENT_ASSETS", 
-    "CURRENT_LIABILITIES", 
-    "TAXATION", 
+    "PROVISIONS",
+    "RECEIVABLES",
+    "PAYABLES",
+    "CURRENT_ASSETS",
+    "CURRENT_LIABILITIES",
+    "TAXATION",
 ]
 INVESTMENT_CASH_FLOW.label = "Investment Cash Flow"
 INVESTMENT_CASH_FLOW.sub_sections = ["NON_CURRENT_ASSETS"]
@@ -186,7 +186,7 @@ NET_CASH_FLOW.label = "Net Cash Flow"
 NET_CASH_FLOW.sub_sections = []
 
 [reports.cashflow_statement.sub_sections]
-NET_PROFIT.label = "Net Profit" 
+NET_PROFIT.label = "Net Profit"
 NET_PROFIT.account_types = [
     "OPERATING_REVENUE",
     "NON_OPERATING_REVENUE",
@@ -196,31 +196,31 @@ NET_PROFIT.account_types = [
     "OTHER_EXPENSE",
 ]
 
-PROVISIONS.label = "Provisions" 
+PROVISIONS.label = "Provisions"
 PROVISIONS.account_types = ["CONTRA_ASSET"]
 
-RECEIVABLES.label = "Receivables" 
+RECEIVABLES.label = "Receivables"
 RECEIVABLES.account_types = ["RECEIVABLE"]
 
-PAYABLES.label = "Payables" 
+PAYABLES.label = "Payables"
 PAYABLES.account_types = ["PAYABLE"]
 
-CURRENT_ASSETS.label = "Current Assets" 
+CURRENT_ASSETS.label = "Current Assets"
 CURRENT_ASSETS.account_types = ["INVENTORY", "CURRENT_ASSET"]
 
-CURRENT_LIABILITIES.label = "Current Liabilities" 
+CURRENT_LIABILITIES.label = "Current Liabilities"
 CURRENT_LIABILITIES.account_types = ["CURRENT_LIABILITY"]
 
-TAXATION.label = "Taxation" 
+TAXATION.label = "Taxation"
 TAXATION.account_types = ["CONTROL"]
 
-NON_CURRENT_ASSETS.label = "Non Current Assets" 
+NON_CURRENT_ASSETS.label = "Non Current Assets"
 NON_CURRENT_ASSETS.account_types = ["NON_CURRENT_ASSET"]
 
-NON_CURRENT_LIABILITIES.label = "Non Current Liabilities" 
+NON_CURRENT_LIABILITIES.label = "Non Current Liabilities"
 NON_CURRENT_LIABILITIES.account_types = ["NON_CURRENT_LIABILITY"]
 
-EQUITY.label = "Equity" 
+EQUITY.label = "Equity"
 EQUITY.account_types = ["EQUITY", "RECONCILIATION"]
 
 [reports.cashflow_statement.results]

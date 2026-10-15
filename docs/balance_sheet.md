@@ -1,7 +1,7 @@
 ## Balance Sheet
 The Balance Sheet, also known as the Statement of Financial position shows the financial health of the entity by comparing the combined balances of asset Accounts to those of liability and equity Accounts.
 
-**Parameters**: 
+**Parameters**:
 - session (Session): The accounting session.
 - end_date (datetime): The latest transaction date for Transaction amounts to be included in the statement.
 
@@ -13,11 +13,11 @@ The Balance Sheet, also known as the Statement of Financial position shows the f
 - totals (dict): The Total balances of Accounts in the sections of the report.
 - result_amounts (dict): The amounts results of the report.
 
- 
+
 **Example**
 ```python
 
-balance_sheet = BalanceSheet(session) 
+balance_sheet = BalanceSheet(session)
 
 print(balance_sheet)
 
@@ -26,16 +26,16 @@ print(balance_sheet)
  For the period: 01, Jan 2024 to 23, Feb 2024
 
 Assets
-    Non Current Asset                120.0000 
-    Receivables                       70.0000 
-    Bank                              50.0000 
+    Non Current Asset                120.0000
+    Receivables                       70.0000
+    Bank                              50.0000
                               _______________
 Total Assets                         240.0000
 
 
 Liabilities
-    Control                           20.0000 
-    Payable                          120.0000 
+    Control                           20.0000
+    Payable                          120.0000
                               _______________
 Total Liabilities                    140.0000
 

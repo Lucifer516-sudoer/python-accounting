@@ -6,10 +6,10 @@
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
 """
-This module provides the configuration for python accounting. Its properties are populated from 
-`config.toml <https://github.com/ekmungai/python-accounting/blob/main/config.toml>`__ by default and 
-should be adequate for most settings, but there are a few methods for overriding the database, 
-hashing and dates configurations. For more extensive custom configurations, you can initialize 
+This module provides the configuration for python accounting. Its properties are populated from
+`config.toml <https://github.com/ekmungai/python-accounting/blob/main/config.toml>`__ by default and
+should be adequate for most settings, but there are a few methods for overriding the database,
+hashing and dates configurations. For more extensive custom configurations, you can initialize
 the class with a custom config.tml file.
 
 """
@@ -32,7 +32,7 @@ class Config:
             echo (bool): Whether to output the SqlAlchemy generated queries to the console.
             Defaults to false.
             include_deleted (bool): Whether to include soft deleted records in query results.
-            Defaults to false. 
+            Defaults to false.
             ignore_isolation (bool): Whether to include records from all entities in query
             results.
             Defaults to false.
@@ -65,7 +65,7 @@ class Config:
             label (str): The human readable name of the Account Type.
             account_code (int): The starting point for the genaration of Account Codes for
             Accounts of the type.
-            purchasables (list): Account types that can be used in purchasing Transations. 
+            purchasables (list): Account types that can be used in purchasing Transations.
         }
     """
     transactions: dict
@@ -77,10 +77,10 @@ class Config:
             label (`str`): The human readable name of the Transaction Type.
             transaction_no_prefix (`int`): The code to be inserted at the beginningof the
             Transaction's type's sequentially generated transaction number.
-            clearables (`list`): Transaction types that can cleared by assignable Transactions.  
+            clearables (`list`): Transaction types that can cleared by assignable Transactions.
             assignables (`list`): Transaction types that can user to cleared (have assigned
             to them) clearable Transactions.
-        }  
+        }
     """
     reports: dict
     """
@@ -92,7 +92,7 @@ class Config:
             to 15.
             aging_schedule_brackets (`dict`): The labels and max age in days for aging schedule
             brackets.
-        }  
+        }
     """
 
     def __init__(self, config_file) -> None:

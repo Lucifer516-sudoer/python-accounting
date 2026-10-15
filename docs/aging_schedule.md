@@ -1,7 +1,7 @@
 ## Aging Schedule
 The Aging Schedule shows amounts receivable from clients and payable to suppliers categorized by how long they have been outstanding. The time period brackets can be configured to any arbitrary number of days each.
 
-**Parameters**: 
+**Parameters**:
 - session (Session): The accounting session.
 - account_type (Account.AccountType): The type of Account whose balances should be retrieved. Must be either `Account.AccountType.RECEIVABLE` or `Account.AccountType.PAYABLE`
 - end_date (datetime): The latest transaction date for Transaction amounts to be included in the schedule.
@@ -11,7 +11,7 @@ The Aging Schedule shows amounts receivable from clients and payable to supplier
 - balances (dict): The total amount outstanding for each age bracket.
 
 Apart from their standard attributes, the Accounts returned also include a `balances` property which indicates how much of the Account's outstanding balance falls into each age bracket.
- 
+
 **Example**
 ```python
 
@@ -21,11 +21,11 @@ print(schedule.accounts)
 [...]
 print(schedule.balances)
 {
-    'current': Decimal('0'), 
-    '31 - 90 days': Decimal('0'), 
-    '91 - 180 days': Decimal('0'), 
-    '181 - 270 days': Decimal('0'), 
-    '271 - 365 days': Decimal('0'), 
+    'current': Decimal('0'),
+    '31 - 90 days': Decimal('0'),
+    '91 - 180 days': Decimal('0'),
+    '181 - 270 days': Decimal('0'),
+    '271 - 365 days': Decimal('0'),
     '365+ Bad Debts': Decimal('0')
 }
 ```

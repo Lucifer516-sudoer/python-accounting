@@ -1,7 +1,7 @@
 ## Cashflow Statement
 The Cashflow Statement links the Income Statement to the Balance Sheet by reconciling the performance of the Entity with changes in the balances of assets, liabilities, equity and the balances in the cashbook.
 
-**Parameters**: 
+**Parameters**:
 - session (Session): The accounting session.
 - start_date (datetime): The earliest transaction date for Transaction amounts to be included in the statement.
 - end_date (datetime): The latest transaction date for Transaction amounts to be included in the statement.
@@ -14,11 +14,11 @@ The Cashflow Statement links the Income Statement to the Balance Sheet by reconc
 - totals (dict): The Total balances of Accounts in the sections of the report.
 - result_amounts (dict): The amounts results of the report.
 
- 
+
 **Example**
 ```python
 
-cashflow_statememt = BalanceSheet(session) 
+cashflow_statememt = BalanceSheet(session)
 
 print(cashflow_statememt)
 

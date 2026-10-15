@@ -1,7 +1,7 @@
 ## Trial Balance
 The Trial Balance, compares the closing balances of all accounts in the chart, debits against credits categorised as either Income Statement or Balance Sheet accounts. If the totals match then the books of the Entity have been recorded in accordance with the double entry principle.
 
-**Parameters**: 
+**Parameters**:
 - session (Session): The accounting session.
 - end_date (datetime): The latest transaction date for Transaction amounts to be included in the statement.
 
@@ -13,7 +13,7 @@ The Trial Balance, compares the closing balances of all accounts in the chart, d
 - totals (dict): The Total balances of Accounts in the sections of the report.
 - result_amounts (dict): The amounts results of the report.
 
- 
+
 **Example**
 ```python
 trial_balance = TrialBalance(session)

@@ -6,7 +6,7 @@
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
 """
-This is the most powerful Transaction in the entire system, capable of 
+This is the most powerful Transaction in the entire system, capable of
     directly accessing the ledger.
 
 """

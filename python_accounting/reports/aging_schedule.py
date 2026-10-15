@@ -32,7 +32,7 @@ class AgingSchedule:
             271 - 365 days (int): Days in the whole year bracket. Defaults to 365.
             365+ Bad Debts (int): Days in the year plus bracket. Defaults to 1000000000 (infinity).
         }
-    
+
     """
     balances: dict
     """
