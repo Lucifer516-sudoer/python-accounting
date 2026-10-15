@@ -1,5 +1,28 @@
-*.pyc
-.pytest_cache
-_pycache_
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environments
+.venv/
+venv/
+.env
+.tox/
+
+# Packaging / build artifacts
+# NOTE: dist/ and docs/_build/ were previously tracked in git (6 wheels/sdists
+# and 267 generated sphinx files). They are generated output and are now ignored;
+# untrack with: git rm -r --cached dist docs/_build
+dist/
+build/
+*.egg-info/
+docs/_build/
+
+# Local tooling
+.idea/
+.vscode/
 *.sqlite
-.tox
+*.log
