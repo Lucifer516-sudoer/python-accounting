@@ -3,15 +3,15 @@ Python Accounting
 ==================
 [![Build Status](https://github.com/ekmungai/python-accounting/workflows/Python%20package/badge.svg)](https://github.com/ekmungai/python-accounting/actions)
 
-Python Accounting is the world's most comprehensive Double Entry Bookkeeping python library. 
+Python Accounting is the world's most comprehensive Double Entry Bookkeeping python library.
 Unlike other similar libraries, Python Accounting focuses on the generation of Financial Reports
-compatible with both IFRS and GAAP standards. 
+compatible with both IFRS and GAAP standards.
 
-The library is designed to be fully customizable, supports multiple Entities (Companies), Account 
-Categorization, Transaction assignment, Opening Balances and Taxation. Transactions are also protected 
+The library is designed to be fully customizable, supports multiple Entities (Companies), Account
+Categorization, Transaction assignment, Opening Balances and Taxation. Transactions are also protected
 against tampering via direct database changes ensuring the integrity of the Ledger. Apart from the standard
-set of Financial Reports, the Library also provides convenient Receivable (Client) and Payabale (Supplier) 
-such as Account Statements and Schedules, as well as an Aging Schedule for all outstanding balances grouped 
+set of Financial Reports, the Library also provides convenient Receivable (Client) and Payabale (Supplier)
+such as Account Statements and Schedules, as well as an Aging Schedule for all outstanding balances grouped
 by configurable time periods (Current, 31 - 90 days, 91 - 180 days etc).
 
 This library is a community initiative of [microbooks.io](https://microbooks.io).
@@ -23,6 +23,16 @@ You can use [pip](https://pip.pypa.io/en/stable/) to install. The library requir
 ```bash
 pip install python-accounting
 ```
+
+The database drivers are optional, because both need system headers (libmysqlclient / libpq)
+that are not always present. Install the one you need:
+
+```bash
+pip install python-accounting[mysql]      # MySQL / MariaDB
+pip install python-accounting[postgres]   # PostgreSQL
+```
+
+Sqlite needs no extra package and is what the test suite runs against.
 
 ## Usage
 Full documemntation for the library can be found on [readthedocs](https://python-accounting.readthedocs.io/en/latest/).
@@ -107,16 +117,16 @@ asset_account = Account(
     account_type=Account.AccountType.NON_CURRENT_ASSET,
     currency_id=currency.id,
     entity_id=entity.id,
-)    
+)
 
 session.add_all([
-    tax_account, 
-    bank_account, 
-    revenue_account, 
-    client_account, 
-    supplier_account, 
-    opex_account, 
-    expense_account,  
+    tax_account,
+    bank_account,
+    revenue_account,
+    client_account,
+    supplier_account,
+    opex_account,
+    expense_account,
     asset_account
 ])
 session.commit()
@@ -147,7 +157,7 @@ session.commit()
 With the Accounts and Taxes in place, we can now prepare some Transactions.
 
 ```python
-from datetime import datetime 
+from datetime import datetime
 from python_accounting.transactions import CashSale
 
 cash_sale = CashSale(
@@ -269,7 +279,7 @@ journal_entry = JournalEntry(
     entity_id=entity.id,
 )
 session.add(journal_entry)
-session.flush() 
+session.flush()
 
 journal_entry_line_item = LineItem(
     narration="Journal Entry line item",
@@ -327,7 +337,7 @@ assignment = Assignment(
 session.add(assignment)
 session.commit()
 
-print(client_invoice.cleared(session)) # 15 
+print(client_invoice.cleared(session)) # 15
 print(client_receipt.balance(session)) # 45
 
 ```
@@ -336,7 +346,7 @@ We are now ready to generate some reports, starting with the Income Statement (P
 ```python
 from python_accounting.reports import IncomeStatement
 
-income_statement = IncomeStatement(session) 
+income_statement = IncomeStatement(session)
 
 print(income_statement)
 
@@ -374,7 +384,7 @@ The Balance Sheet.
 ```python
 from python_accounting.reports import BalanceSheet
 
-balance_sheet = BalanceSheet(session) 
+balance_sheet = BalanceSheet(session)
 
 print(balance_sheet)
 
@@ -384,7 +394,7 @@ print(balance_sheet)
 
 Assets
     Non Current Asset                100.0000 (asset purchase)
-    Bank                              30.0000 (120 cash sale - 110 cash purchase + 50 
+    Bank                              30.0000 (120 cash sale - 110 cash purchase + 50
                                               client receipt - 30 journal entry)
     Receivable                       130.0000 (150 credit sale + 30 Tax - 50 client receipt)
                               _______________
@@ -392,7 +402,7 @@ Total Assets                         260.0000
 
 
 Liabilities
-    Control                           30.0000 (Taxes: 20 cash sale + 30 credit sale - 10 cash 
+    Control                           30.0000 (Taxes: 20 cash sale + 30 credit sale - 10 cash
                                               purchase - 10 credit purchase)
     Payable                          110.0000 (100 credit purchase + 10 Tax)
                               _______________
@@ -413,7 +423,7 @@ And finally The Cashflow Statement.
 ```python
 from python_accounting.reports import CashflowStatement
 
-cashflow_statememt = CashflowStatement(session) 
+cashflow_statememt = CashflowStatement(session)
 
 print(cashflow_statememt)
 
@@ -469,4 +479,3 @@ Please see [CONTRIBUTING](https://github.com/ekmungai/python-accounting/blob/mai
 ## License
 
 This software is distributed for free under the MIT License. Please see [LICENCE](https://github.com/ekmungai/python-accounting/blob/main/LICENSE) for more information.
-

@@ -8,7 +8,23 @@ I am acutely aware that as a professionally trained Accountant I may have used s
 
 1. Fork it
 2. Create your feature branch (`git checkout -b feature/fooBar`)
-3. Write tests for the feature
-3. Commit your changes (`git commit -am 'Add some fooBar'`)
-4. Push to the branch (`git push origin feature/fooBar`)
-5. Create a new Pull Request
+3. Set up the environment (this project uses [uv](https://docs.astral.sh/uv/), not poetry):
+
+   ```bash
+   uv sync --all-groups
+   uv run pre-commit install
+   ```
+
+4. Write tests for the feature
+5. Verify — the pre-commit hook runs the same gate as CI:
+
+   ```bash
+   uv run pylint ./python_accounting   # must stay 10.00/10
+   uv run pytest
+   ```
+
+6. Commit your changes (`git commit -am 'Add some fooBar'`)
+7. Push to the branch (`git push origin feature/fooBar`)
+8. Create a new Pull Request
+
+See `AGENTS.md` for architecture notes and testing quirks.
