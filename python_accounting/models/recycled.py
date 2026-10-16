@@ -32,7 +32,7 @@ class Recycled(IsolatingMixin, Base):
     """(Recyclable): The model that was recycled/restored."""
 
     def __repr__(self) -> str:
-        return "<{}> {}{}{}".format(  # pylint: disable=consider-using-f-string
+        return "<{}> {}{}{}".format(
             self.subject.recycled_type,
             f"Deleted: {self.subject.deleted_at} " if self.subject.deleted_at else "",
             f"Restored: {self.restored_at} " if self.restored_at else "",

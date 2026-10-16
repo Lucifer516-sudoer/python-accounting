@@ -33,16 +33,12 @@ class ClearingMixin:
         Returns:
             Decimal: The total amount of assignments made against Transaction.
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Assignment,
         )
 
         query = (
-            session.query(
-                func.sum(Assignment.amount).label(  # pylint: disable=not-callable
-                    "amount"
-                )
-            )
+            session.query(func.sum(Assignment.amount).label("amount"))
             .filter(Assignment.entity_id == self.entity_id)
             .filter(Assignment.assigned_id == self.id)
             .filter(Assignment.assigned_type == self.__class__.__name__)
@@ -62,7 +58,7 @@ class ClearingMixin:
         Returns:
             A List of assignments made to clear the Transaction.
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Assignment,
         )
 

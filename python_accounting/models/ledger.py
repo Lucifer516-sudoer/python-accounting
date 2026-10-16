@@ -23,9 +23,7 @@ from python_accounting.config import config
 from python_accounting.models import Recyclable, Balance, Transaction
 
 
-class Ledger(  # pylint: disable=too-many-instance-attributes
-    IsolatingMixin, Recyclable
-):
+class Ledger(IsolatingMixin, Recyclable):
     """Represents an entry in the Ledger. (Should never have to be invoked directly)."""
 
     __mapper_args__ = {"polymorphic_identity": "Ledger"}
@@ -84,7 +82,7 @@ class Ledger(  # pylint: disable=too-many-instance-attributes
          {self.amount}"""
 
     @staticmethod
-    def _allocate_amount(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def _allocate_amount(  # noqa: PLR0913, PLR0917
         session, post, amount, posts, folios, transaction, entry_type
     ) -> None:
         if amount == 0:

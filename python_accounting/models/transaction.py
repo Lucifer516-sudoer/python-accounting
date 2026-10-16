@@ -106,7 +106,6 @@ class Transaction(IsolatingMixin, Recyclable):
 
     @validates("line_items", include_removes=True)
     def validate_line_items(self, _, line_item, is_remove):
-        # pylint: disable=line-too-long
         """
         Validates adding or removing of Transaction Line Items.
 
@@ -114,7 +113,6 @@ class Transaction(IsolatingMixin, Recyclable):
             PostedTransactionError: If the Transaction is posted and Line Items are added or removed from it.
             ValueError: If the unsaved Line Item are added or removed from the Transaction.
         """
-        # pylint: enable=line-too-long
         if hasattr(self, "_validate_subclass_line_items"):
             self._validate_subclass_line_items(line_item)
 
@@ -159,9 +157,7 @@ class Transaction(IsolatingMixin, Recyclable):
                     line_item.tax.rate * line_item.amount * line_item.quantity / 100
                 )
                 total += amount
-                if (
-                    line_item.tax.code in taxes  # pylint: disable=consider-iterating-dictionary
-                ):
+                if line_item.tax.code in taxes:
                     taxes[line_item.tax.code]["amount"] += amount
                 else:
                     taxes.update(
@@ -209,7 +205,7 @@ class Transaction(IsolatingMixin, Recyclable):
             session.query(Transaction)
             .filter(Transaction.transaction_type == transaction_type)
             .filter(Transaction.transaction_date > reporting_period.interval()["start"])
-            .with_entities(func.count())  # pylint: disable=not-callable
+            .with_entities(func.count())
             .execution_options(include_deleted=True)
             .filter(Transaction.entity_id == self.entity_id)
             .scalar()
@@ -241,7 +237,7 @@ class Transaction(IsolatingMixin, Recyclable):
         Returns:
             None
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Ledger,
         )
 
@@ -263,15 +259,13 @@ class Transaction(IsolatingMixin, Recyclable):
         Returns:
             Decimal: The amount posted to the Account by the Transaction.
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Balance,
             Ledger,
         )
 
         query = (
-            session.query(
-                func.sum(Ledger.amount).label("amount")  # pylint: disable=not-callable
-            )
+            session.query(func.sum(Ledger.amount).label("amount"))
             .filter(Ledger.entity_id == self.entity_id)
             .filter(Ledger.transaction_id == self.id)
             .filter(Ledger.currency_id == self.currency_id)

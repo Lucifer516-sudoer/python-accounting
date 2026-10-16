@@ -30,14 +30,13 @@ def _filter_options(execute_state, option) -> bool:
     )
 
 
-# pylint: disable=too-few-public-methods
 class EventListenersMixin:
     """
     Event Listeners class.
     """
 
     @event.listens_for(Session, "do_orm_execute")
-    def _add_filtering_criteria(  # pylint: disable=no-self-argument
+    def _add_filtering_criteria(
         execute_state,
     ) -> None:
         # Recycling filter
@@ -46,9 +45,8 @@ class EventListenersMixin:
                 orm.with_loader_criteria(
                     Recyclable,
                     lambda cls: and_(
-                        cls.deleted_at == None,  # pylint: disable=singleton-comparison
-                        cls.destroyed_at  # pylint: disable=singleton-comparison
-                        == None,
+                        cls.deleted_at == None,
+                        cls.destroyed_at == None,
                     ),
                     execute_state,
                     include_aliases=True,
@@ -109,9 +107,7 @@ class EventListenersMixin:
             )
 
     @event.listens_for(Ledger, "after_insert")
-    def _set_ledger_hash(  # pylint: disable=no-self-argument
-        mapper, connection, target
-    ):
+    def _set_ledger_hash(mapper, connection, target):
         connection.execute(
             update(Ledger)
             .where(Ledger.id == target.id)

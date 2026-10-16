@@ -44,7 +44,7 @@ postgres = ["psycopg2>=2.9.9,<3.0"]
 
 [dependency-groups]
 test = ["pytest>=7.4.3,<8.0"]
-lint = ["pylint>=3.1.0,<4.0", "pre-commit>=4.0.0,<5.0", "ruff>=0.14.10,<0.15"]
+lint = ["pre-commit>=4.0.0,<5.0", "ruff>=0.14.10,<0.15"]
 docs = [
     "sphinx-autoapi>=3.0.0,<4.0",
     "sphinx-rtd-theme>=2.0.0,<3.0",
@@ -94,10 +94,10 @@ select = [
     "B",   # flake8-bugbear
     "SIM", # flake8-simplify
     "C4",  # flake8-comprehensions
-    # "PL" (pylint) joins in the next commit, once the ~100 `# pylint: disable`
-    # comments can be rewritten as `# noqa` in the same change that drops
-    # pylint. Turning it on before then would need every live suppression to
-    # carry both comment styles at once.
+    "PL",  # pylint. This is the direct replacement for the pylint gate that
+           # was removed in the previous commit, and it is what keeps the
+           # design checks (PLR0912 branches, PLR0913 args, PLR0914 locals,
+           # PLR0915 statements, PLR0917 positional args) alive.
 ]
 # Every entry here is a deliberate decision, not a backlog. Adding one requires
 # a comment saying why.
@@ -131,6 +131,11 @@ ignore = [
     # in isolation can break an import path the tests do not exercise.
     # Re-enable I001 only once the import graph is demonstrably acyclic.
     "I001",
+    # Function-level imports are deliberate: they break import cycles between
+    # the models, the session layer and the mixins.
+    "PLC0415",
+    # Comparing an amount against a literal is the domain, not a smell.
+    "PLR2004",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -146,6 +151,3 @@ ignore = [
 # signatures are idiomatic in tests; every other rule still applies there, and
 # the library above stays under these limits.
 "tests/*.py" = ["PLR0912", "PLR0913", "PLR0915"]
-
-[tool.pylint.main]
-init-hook = 'import sys; sys.path.append(".")'

@@ -15,7 +15,7 @@ from python_accounting.models import Transaction
 from python_accounting.mixins import SellingMixin
 
 
-class CashSale(SellingMixin, Transaction):  # pylint: disable=too-many-ancestors
+class CashSale(SellingMixin, Transaction):
     """Class for the Cash Sale Transaction."""
 
     __tablename__ = None
@@ -24,7 +24,7 @@ class CashSale(SellingMixin, Transaction):  # pylint: disable=too-many-ancestors
     }
 
     def __init__(self, **kw: Any) -> None:
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Account,
         )
 

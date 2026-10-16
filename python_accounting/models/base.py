@@ -14,7 +14,6 @@ from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
 
-# pylint: disable=too-few-public-methods
 class Base(DeclarativeBase):
     """The accounting model base class"""
 
@@ -32,5 +31,5 @@ class Base(DeclarativeBase):
     """
 
     @declared_attr.directive
-    def __tablename__(cls) -> str:  # pylint: disable=no-self-argument
+    def __tablename__(cls) -> str:
         return cls.__name__.lower()

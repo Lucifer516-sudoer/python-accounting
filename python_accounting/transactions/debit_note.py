@@ -15,9 +15,7 @@ from python_accounting.models import Transaction
 from python_accounting.mixins import BuyingMixin, AssigningMixin
 
 
-class DebitNote(  # pylint: disable=too-many-ancestors
-    BuyingMixin, AssigningMixin, Transaction
-):
+class DebitNote(BuyingMixin, AssigningMixin, Transaction):
     """Class for the Debit Note Transaction."""
 
     __tablename__ = None
@@ -26,7 +24,7 @@ class DebitNote(  # pylint: disable=too-many-ancestors
     }
 
     def __init__(self, **kw: Any) -> None:
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Account,
         )
 

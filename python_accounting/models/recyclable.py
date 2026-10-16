@@ -16,7 +16,6 @@ from sqlalchemy import String
 from python_accounting.models import Base
 
 
-# pylint: disable=too-few-public-methods
 class Recyclable(Base):
     """
     Interface for associating recycled objects with its models.

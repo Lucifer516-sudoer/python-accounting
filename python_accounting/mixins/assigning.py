@@ -35,17 +35,13 @@ class AssigningMixin:
             amount and the total amount of assignments made to it.
         """
 
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Assignment,
         )
 
         return self.amount - (
             (
-                session.query(
-                    func.sum(Assignment.amount).label(  # pylint: disable=not-callable
-                        "amount"
-                    )
-                )
+                session.query(func.sum(Assignment.amount).label("amount"))
                 .filter(Assignment.transaction_id == self.id)
                 .filter(Assignment.entity_id == self.entity_id)
             ).scalar()
@@ -62,7 +58,7 @@ class AssigningMixin:
         Returns:
             A List of assignments made for the Transaction.
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Assignment,
         )
 
@@ -95,7 +91,7 @@ class AssigningMixin:
             None
         """
 
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Assignment,
         )
 

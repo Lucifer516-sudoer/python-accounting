@@ -37,8 +37,6 @@ jobs:
         run: uv run --python ${{ matrix.python-version }} ruff format --check .
       - name: Lint with ruff
         run: uv run --python ${{ matrix.python-version }} ruff check
-      - name: Lint with pylint
-        run: uv run --python ${{ matrix.python-version }} pylint ./python_accounting
       - name: Test with pytest
         run: uv run --python ${{ matrix.python-version }} pytest -v
 

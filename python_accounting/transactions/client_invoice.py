@@ -15,9 +15,7 @@ from python_accounting.models import Transaction
 from python_accounting.mixins import SellingMixin, ClearingMixin
 
 
-class ClientInvoice(  # pylint: disable=too-many-ancestors
-    SellingMixin, ClearingMixin, Transaction
-):
+class ClientInvoice(SellingMixin, ClearingMixin, Transaction):
     """Class for the Client Invoice Transaction."""
 
     __tablename__ = None
@@ -26,7 +24,7 @@ class ClientInvoice(  # pylint: disable=too-many-ancestors
     }
 
     def __init__(self, **kw: Any) -> None:
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Account,
         )
 

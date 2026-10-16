@@ -17,7 +17,6 @@ from python_accounting.mixins import AssigningMixin
 
 
 class SupplierPayment(
-    # pylint: disable=too-many-ancestors
     TradingMixin,
     AssigningMixin,
     Transaction,
@@ -30,7 +29,7 @@ class SupplierPayment(
     }
 
     def __init__(self, **kw: Any) -> None:
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Account,
         )
 

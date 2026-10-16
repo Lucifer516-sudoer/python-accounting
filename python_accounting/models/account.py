@@ -75,7 +75,7 @@ class Account(IsolatingMixin, Recyclable):
             session.query(Account)
             .filter(Account.entity_id == self.entity_id)
             .filter(Account.account_type == self.account_type)
-            .with_entities(func.count())  # pylint: disable=not-callable
+            .with_entities(func.count())
             .scalar()
         )
 
@@ -105,7 +105,7 @@ class Account(IsolatingMixin, Recyclable):
             Decimal: The difference between the balance of the Account at the start date and
             end date.
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Balance,
             Ledger,
         )
@@ -113,9 +113,7 @@ class Account(IsolatingMixin, Recyclable):
         start_date, end_date, _, _ = get_dates(session, start_date, end_date)
 
         query = (
-            session.query(
-                func.sum(Ledger.amount).label("amount")  # pylint: disable=not-callable
-            )
+            session.query(func.sum(Ledger.amount).label("amount"))
             .filter(Ledger.currency_id == self.currency_id)
             .filter(Ledger.transaction_date >= start_date)
             .filter(Ledger.transaction_date <= end_date)
@@ -206,7 +204,7 @@ class Account(IsolatingMixin, Recyclable):
             Decimal: The total opening balance of the Account for the year.
 
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Balance,
         )
 
@@ -218,9 +216,7 @@ class Account(IsolatingMixin, Recyclable):
             else session.entity.reporting_period_id
         )
         query = (
-            session.query(
-                func.sum(Balance.amount).label("amount")  # pylint: disable=not-callable
-            )
+            session.query(func.sum(Balance.amount).label("amount"))
             .filter(Balance.currency_id == self.currency_id)
             .filter(Balance.reporting_period_id == period_id)
             .filter(Balance.account_id == self.id)
@@ -254,14 +250,13 @@ class Account(IsolatingMixin, Recyclable):
             session, start_date, end_date
         )
 
-    def statement(  # pylint: disable=too-many-locals
+    def statement(
         self,
         session,
         start_date: datetime = None,
         end_date: datetime = None,
         schedule: bool = False,
     ) -> dict:
-        # pylint: disable=line-too-long
         """
         Gets a chronological listing of the Transactions posted to the Account between
             the dates given.
@@ -294,8 +289,7 @@ class Account(IsolatingMixin, Recyclable):
                 - cleared_amount (Decimal): The amount of the Transactions in the Schdeule that has been cleared.
                 - uncleared_amount (Decimal): The amount of the Transactions in the Schdeule that is still outstanding.
         """
-        # pylint: enable=line-too-long
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Assignment,
             Balance,
             Ledger,
@@ -369,22 +363,17 @@ class Account(IsolatingMixin, Recyclable):
             ):
                 if schedule:
                     cleared = transaction.cleared(session, end_date=end_date)
-                    if (
-                        transaction.amount  # pylint: disable=too-many-boolean-expressions
-                        - cleared
-                        == 0
-                        or (
-                            transaction.transaction_type
-                            == Transaction.TransactionType.JOURNAL_ENTRY
-                            and (
-                                (
-                                    self.account_type == Account.AccountType.RECEIVABLE
-                                    and transaction.credited
-                                )
-                                or (
-                                    self.account_type == Account.AccountType.PAYABLE
-                                    and not transaction.credited
-                                )
+                    if transaction.amount - cleared == 0 or (
+                        transaction.transaction_type
+                        == Transaction.TransactionType.JOURNAL_ENTRY
+                        and (
+                            (
+                                self.account_type == Account.AccountType.RECEIVABLE
+                                and transaction.credited
+                            )
+                            or (
+                                self.account_type == Account.AccountType.PAYABLE
+                                and not transaction.credited
                             )
                         )
                     ):
@@ -431,7 +420,7 @@ class Account(IsolatingMixin, Recyclable):
         Returns:
             None
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Category,
         )
 
@@ -463,12 +452,12 @@ class Account(IsolatingMixin, Recyclable):
         Returns:
             None
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Ledger,
         )
 
         if (
-            session.query(func.count(Ledger.id))  # pylint: disable=not-callable
+            session.query(func.count(Ledger.id))
             .filter(Ledger.entity_id == self.entity_id)
             .filter(
                 or_(

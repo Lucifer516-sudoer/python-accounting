@@ -112,12 +112,12 @@ class LineItem(IsolatingMixin, Recyclable):
         Validates if the line item can be deleted.
 
         """
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Ledger,
         )
 
         if (
-            session.query(func.count(Ledger.id))  # pylint: disable=not-callable
+            session.query(func.count(Ledger.id))
             .filter(Ledger.entity_id == self.entity_id)
             .filter(Ledger.line_item_id == self.id)
             .scalar()

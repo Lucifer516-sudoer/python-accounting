@@ -19,7 +19,8 @@ I am acutely aware that as a professionally trained Accountant I may have used s
 5. Verify — the pre-commit hook runs the same gate as CI:
 
    ```bash
-   uv run pylint ./python_accounting   # must stay 10.00/10
+   uv run ruff format --check .   # must stay clean
+   uv run ruff check .            # must stay clean
    uv run pytest
    ```
 

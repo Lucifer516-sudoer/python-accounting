@@ -21,9 +21,7 @@ from python_accounting.exceptions import (
 )
 
 
-class JournalEntry(  # pylint: disable=too-many-ancestors
-    Transaction, AssigningMixin, ClearingMixin
-):
+class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
     """Class for the Journal Entry Transaction."""
 
     __tablename__ = None

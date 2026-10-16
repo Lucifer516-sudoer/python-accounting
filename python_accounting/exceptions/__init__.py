@@ -102,7 +102,7 @@ class InvalidBalanceDateError(AccountingExeption):
     """
 
     def __init__(self) -> None:
-        self.message = "Transaction date must be earlier than the first day of the Balance's Reporting Period."  # pylint: disable=line-too-long
+        self.message = "Transaction date must be earlier than the first day of the Balance's Reporting Period."
         super().__init__()
 
 
@@ -110,7 +110,7 @@ class InvalidBalanceTransactionError(AccountingExeption):
     """Balance Transaction must be one of Client Invoice, Supplier Bill or Journal Entry."""
 
     def __init__(self) -> None:
-        self.message = "Balance Transaction must be one of Client Invoice, Supplier Bill or Journal Entry."  # pylint: disable=line-too-long
+        self.message = "Balance Transaction must be one of Client Invoice, Supplier Bill or Journal Entry."
         super().__init__()
 
 
@@ -185,7 +185,7 @@ class InvalidTransactionDateError(AccountingExeption):
     """The Transaction date cannot be the exact beginning of the reporting period."""
 
     def __init__(self) -> None:
-        self.message = "The Transaction date cannot be at the exact start of the Reporting Period. Use a Balance object instead."  # pylint: disable=line-too-long
+        self.message = "The Transaction date cannot be at the exact start of the Reporting Period. Use a Balance object instead."
         super().__init__()
 
 
@@ -193,7 +193,7 @@ class InvalidTransactionTypeError(AccountingExeption):
     """The Transaction type cannot be changed as this would bypass subclass validations."""
 
     def __init__(self) -> None:
-        self.message = "The Transaction type cannot be changed as this would bypass subclass validations."  # pylint: disable=line-too-long
+        self.message = "The Transaction type cannot be changed as this would bypass subclass validations."
         super().__init__()
 
 

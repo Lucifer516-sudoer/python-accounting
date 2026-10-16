@@ -9,7 +9,6 @@
 This mixin providses accounting specific functionality to the standard sqlachemy session.
 """
 
-# pylint: disable=too-few-public-methods
 from datetime import datetime
 from sqlalchemy import orm, select, func
 from python_accounting.models import ReportingPeriod
@@ -49,7 +48,7 @@ class AccountingFunctionsMixin:
             past_periods = (
                 self.query(ReportingPeriod)
                 .filter(ReportingPeriod.entity_id == self.entity.id)
-                .with_entities(func.count())  # pylint: disable=not-callable
+                .with_entities(func.count())
                 .execution_options(ignore_isolation=True)
                 .scalar()
             )

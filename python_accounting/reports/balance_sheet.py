@@ -18,7 +18,6 @@ from python_accounting.reports.financial_statement import FinancialStatement
 from python_accounting.models import Account
 
 
-# pylint: disable=too-few-public-methods
 class BalanceSheet(FinancialStatement):
     """This class represents Financial Position/Balance Sheet of a given Entity."""
 
@@ -48,7 +47,7 @@ class BalanceSheet(FinancialStatement):
     """(str): The configuration section for the report."""
 
     def __init__(self, session, end_date: datetime = None) -> None:
-        from python_accounting.reports.income_statement import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.reports.income_statement import (
             IncomeStatement,
         )
 

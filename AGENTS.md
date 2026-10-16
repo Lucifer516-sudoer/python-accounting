@@ -7,30 +7,57 @@ Nov 2023 – Mar 2024; only lightly maintained since. Sibling repo `python-profi
 
 ```bash
 uv sync --all-groups    # required; deps are NOT vendored
-uv run pytest           # 109 tests, sqlite in-memory, no services needed
-uv run pylint ./python_accounting   # CI gate, MUST pass
+uv run ruff format --check .   # CI gate, MUST pass
+uv run ruff check .            # CI gate, MUST pass
+uv run pytest                  # 109 tests, sqlite in-memory, no services needed
 ```
 
 - Toolchain is **uv** (not poetry). `uv sync` creates `.venv`; `uv run` auto-syncs it.
   `uv lock` regenerates `uv.lock`; `uv lock --check` asserts it matches `pyproject.toml`.
 - Dependency groups: `test`, `lint`, `docs`, `dev`. `uv sync --all-groups` gets everything.
-- **Required order:** `pylint` then `pytest`. `.pylintrc` only sets `init-hook` — it adds no
-  disables — so pylint runs at its default `fail-under=10` and *any* new warning fails CI.
+- **Required order:** `ruff format --check` then `ruff check` then `pytest`. Any new finding fails CI.
 - Single test: `uv run pytest tests/test_account.py::TestAccount::test_x`
   (`testpaths = ["tests"]` is set in `pyproject.toml`).
 - A specific Python version: `uv run --python 3.9 pytest` (uv downloads the interpreter).
-- **No formatter.** Formatting is manual — match surrounding style. `ruff format` would rewrite
-  33 of 82 files; it is intentionally not wired in. See "Known debt".
+- **Formatter:** `ruff format` at `line-length = 88`. Run it yourself before committing —
+  the pre-commit hook only *checks*. Reformatting is a commit of its own, never mixed into
+  unrelated work.
+- **pylint was removed** in the ruff migration; ruff's `PL` rules (PLR0912/0913/0914/0915/0917)
+  are the replacement for the design checks pylint used to enforce.
 - `tox.ini` was removed: with uv managing the environment and the CI matrix covering 3.9–3.13,
   tox's isolation was meaningless (it would have silently tested `.venv`, not its own env).
+
+## Ruff is not a drop-in for pylint — three traps
+
+Each of these cost real debugging time during the migration. All three are recorded in
+`pyproject.toml` next to the rule they disable, with the reasoning inline.
+
+1. **`E711` (`== None`) must stay ignored. Never "fix" these 68 sites.** The soft-delete filter in
+   `database/event_listeners.py` is literally `cls.deleted_at == None`. On an instrumented
+   attribute SQLAlchemy overloads `__eq__`, so `== None` compiles to `WHERE deleted_at IS NULL`,
+   while `is None` is an ordinary Python identity test that compiles to `WHERE false`. The fix
+   makes every row in the database invisible, and it type-checks fine while doing it.
+2. **`I001` (isort) must stay ignored — import order is load-bearing.**
+   `python_accounting/models/__init__.py` has to import `.base` before `.account`, because
+   `account.py`, `assignment.py` and `balance.py` all do `from python_accounting.models import Base`.
+   Sorting alphabetically puts `account` first and the package stops importing entirely. isort
+   reordered 54 files before this was caught. Re-enable it only once the import graph is acyclic.
+3. **`ruff check --fix` has broken this code once already.** UP015 rewrote
+   `open(config_file, "r", -1, "UTF-8")` into `open(config_file, -1, "UTF-8")`, moving the
+   buffering argument into the `mode` slot, which made the package unimportable. Always run the
+   test suite after `--fix`; never `--fix` and `--unsafe-fixes` in the same breath as a commit.
+
+Suppressions are now `# noqa: <CODE>` (e.g. `# noqa: PLR0913`), not `# pylint: disable=`.
+There are only two left in the library; most of the 107 old pylint comments had no ruff
+equivalent and were deleted outright.
 
 ## Pre-commit
 
 `uv run pre-commit install` (once) installs the hook; it runs on every commit.
 
-- Hooks mirror the CI gate: **pylint + pytest** as whole-project hooks, plus hygiene
-  (trailing whitespace, EOF, merge conflicts, yaml/toml/json parse, large files, private keys,
-  debug statements), `uv lock --check`, and a wheel-layout assertion.
+- Hooks mirror the CI gate: **ruff format + ruff check + pytest** as whole-project hooks, plus
+  hygiene (trailing whitespace, EOF, merge conflicts, yaml/toml/json parse, large files, private
+  keys, debug statements), `uv lock --check`, and a wheel-layout assertion.
 - `scripts/check_wheel_layout.py` guards a **load-bearing packaging invariant** — see below.
 - Fix what's fixable (`uv run pre-commit run --all-files`) rather than `--no-verify`.
 
@@ -82,7 +109,7 @@ uv run pylint ./python_accounting   # CI gate, MUST pass
 
 - Every module starts with the same 6-line header (`# <path>` + MIT copyright). Preserve it. It
   references an `AUTHORS` file that does not exist — leave the reference alone, it's pre-existing.
-- Local `# pylint: disable=<code>` comments are used instead of changing `.pylintrc`. Follow that.
+- Local `# noqa: <CODE>` comments are used instead of loosening `[tool.ruff.lint]`. Follow that.
 - Commit message convention is mixed: `Chore: ...` / `Fix: ...` (recent) and `Update: ...` (old).
   Recent commits use conventional prefixes.
 
@@ -93,9 +120,6 @@ uv run pylint ./python_accounting   # CI gate, MUST pass
 - **`models/base.py` uses `mapped_column(default=datetime.now())`** — evaluated once at import, so
   `created_at`/`updated_at` are frozen at process start for the process lifetime. Should be a
   callable (`default=datetime.now`).
-- **No second linter.** `ruff check` reports 129 findings, largely because it disagrees with the
-  codebase's deliberate `== None` style (pylint `singleton-comparison`, already suppressed in
-  several files). Adopting ruff means reconciling the two, plus a 33-file format pass. Not done.
 - **`docs/_build/` (267 files) and `dist/` (6 wheels/sdists) were tracked in git** and are now
   untracked + ignored. `dist/` and `docs/_build/` still exist on disk from before.
 - `CHANGELOG` stops at 1.0.0 while `pyproject.toml` is at 1.0.1.

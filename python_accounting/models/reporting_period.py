@@ -136,7 +136,7 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
                 session.query(ReportingPeriod)
                 .filter(ReportingPeriod.entity_id == self.entity_id)
                 .filter(ReportingPeriod.calendar_year == self.calendar_year)
-                .with_entities(func.count())  # pylint: disable=not-callable
+                .with_entities(func.count())
                 .execution_options(ignore_isolation=True)
                 .scalar()
             ) > 0:
@@ -146,7 +146,7 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
                 session.query(ReportingPeriod)
                 .filter(ReportingPeriod.entity_id == self.entity_id)
                 .filter(ReportingPeriod.status == ReportingPeriod.Status.OPEN)
-                .with_entities(func.count())  # pylint: disable=not-callable
+                .with_entities(func.count())
                 .execution_options(ignore_isolation=True)
                 .scalar()
             ) > 0 and self.status == ReportingPeriod.Status.OPEN:
@@ -176,7 +176,7 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
         )
         start = datetime(
             year,
-            self.entity.year_start,  # pylint: disable=no-member
+            self.entity.year_start,
             1,
             0,
             0,

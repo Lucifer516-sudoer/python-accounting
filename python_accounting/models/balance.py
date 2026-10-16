@@ -135,7 +135,6 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
         return balances
 
     def validate(self, session) -> None:
-        # pylint: disable=line-too-long
         """
         Validates the Balance properties.
 
@@ -151,7 +150,6 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
         Returns:
             None
         """
-        # pylint:enable=line-too-long
         reporting_period = session.entity.reporting_period
         account = session.get(Account, self.account_id)
         self.currency_id = account.currency_id

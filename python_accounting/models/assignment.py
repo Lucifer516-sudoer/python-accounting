@@ -97,8 +97,7 @@ class Assignment(IsolatingMixin, Base):
         )
         return session.get(getattr(module, self.assigned_type), self.assigned_id)
 
-    def validate(self, session) -> None:  # pylint: disable=too-many-branches
-        # pylint: disable=line-too-long
+    def validate(self, session) -> None:  # noqa: PLR0912
         """
         Validates the Assignment properties.
 
@@ -120,7 +119,6 @@ class Assignment(IsolatingMixin, Base):
         Returns:
             None
         """
-        # pylint: enable=line-too-long
         if self.amount < 0:
             raise NegativeValueError(self.__class__.__name__)
 
@@ -175,9 +173,9 @@ class Assignment(IsolatingMixin, Base):
                 else Balance.BalanceType.DEBIT
             )
 
-        query = session.query(
-            func.count(Assignment.id)  # pylint: disable=not-callable
-        ).filter(Assignment.entity_id == self.entity_id)
+        query = session.query(func.count(Assignment.id)).filter(
+            Assignment.entity_id == self.entity_id
+        )
 
         if query.filter(Assignment.assigned_id == self.transaction_id).scalar() > 0:
             raise MixedAssignmentError("Cleared", "Assigned")

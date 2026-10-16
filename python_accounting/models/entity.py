@@ -15,7 +15,6 @@ from sqlalchemy import String, Boolean, ForeignKey
 from python_accounting.models import Recyclable, ReportingPeriod
 
 
-# pylint: disable=too-few-public-methods
 class Entity(Recyclable):
     """Represents the Reporting Entity."""
 

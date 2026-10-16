@@ -15,9 +15,7 @@ from python_accounting.models import Transaction
 from python_accounting.mixins import BuyingMixin, ClearingMixin
 
 
-class SupplierBill(  # pylint: disable=too-many-ancestors
-    BuyingMixin, ClearingMixin, Transaction
-):
+class SupplierBill(BuyingMixin, ClearingMixin, Transaction):
     """Class for the Supplier Bill Transaction."""
 
     __tablename__ = None
@@ -26,7 +24,7 @@ class SupplierBill(  # pylint: disable=too-many-ancestors
     }
 
     def __init__(self, **kw: Any) -> None:
-        from python_accounting.models import (  # pylint: disable=import-outside-toplevel
+        from python_accounting.models import (
             Account,
         )
 

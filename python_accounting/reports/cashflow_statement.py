@@ -17,9 +17,7 @@ from python_accounting.utils.dates import get_dates
 from python_accounting.models import Account
 
 
-# pylint: disable=too-few-public-methods
 class CashflowStatement(FinancialStatement):
-    # pylint: disable=line-too-long
     """This class represents the movement of balances of Balance Sheet accounts during the given period."""
 
     config = "cashflow_statement"
@@ -28,7 +26,6 @@ class CashflowStatement(FinancialStatement):
     sub_sections: dict
     """sub_sections (dict): The categories of the contents of the sections of the report."""
 
-    # pylint: enable=line-too-long
     def __init__(
         self, session, start_date: datetime = None, end_date: datetime = None
     ) -> None:

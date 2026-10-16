@@ -1,6 +1,6 @@
 # Run `uvx pre-commit install` once after cloning (or `uv run pre-commit install`).
-# The ruff + pylint + pytest hooks are the same gate CI enforces, so a red commit
-# is impossible to merge. See AGENTS.md for the full command list.
+# The ruff + pytest hooks are the same gate CI enforces, so a red commit is
+# impossible to merge. See AGENTS.md for the full command list.
 default_install_hook_types: [pre-commit]
 
 exclude: |
@@ -48,14 +48,6 @@ repos:
       - id: ruff-check
         name: ruff check (CI gate)
         entry: uv run ruff check
-        language: system
-        pass_filenames: false
-        require_serial: true
-        types: [python]
-
-      - id: pylint
-        name: pylint (CI gate, must stay 10.00/10)
-        entry: uv run pylint ./python_accounting
         language: system
         pass_filenames: false
         require_serial: true
