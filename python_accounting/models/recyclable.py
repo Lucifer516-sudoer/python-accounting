@@ -11,9 +11,14 @@ Represents an interface that relates recycled objects with the recycled models.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String
 from python_accounting.models import Base
+
+if TYPE_CHECKING:
+    from python_accounting.models.recycled import Recycled
 
 
 class Recyclable(Base):
@@ -23,9 +28,9 @@ class Recyclable(Base):
 
     __tablename__ = "recyclable"
 
-    deleted_at: Mapped[datetime] = mapped_column(nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True)
     """(`datetime`, optional): The time the model was recycled."""
-    destroyed_at: Mapped[datetime] = mapped_column(nullable=True)
+    destroyed_at: Mapped[datetime | None] = mapped_column(nullable=True)
     """(`datetime`, optional): The time the model was recycled permanently deleted."""
     recycled_type: Mapped[str] = mapped_column(String(255))
     """(str): The class name of the recycled model."""
