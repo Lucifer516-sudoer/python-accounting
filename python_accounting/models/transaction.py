@@ -10,7 +10,6 @@ Represents a financial Transaction.
 
 """
 
-from typing import List, Set
 from datetime import datetime
 from decimal import Decimal
 from strenum import StrEnum
@@ -94,12 +93,12 @@ class Transaction(IsolatingMixin, Recyclable):
     """(Currency): The Currency associated with the Transaction."""
     account: Mapped["Account"] = relationship(foreign_keys=[account_id])
     """(Account): The Account model to which Transaction amounts are to be posted."""
-    line_items: Mapped[Set["LineItem"]] = relationship(
+    line_items: Mapped[set["LineItem"]] = relationship(
         back_populates="transaction",
         primaryjoin="Transaction.id==LineItem.transaction_id",
     )
     """(Set): The Line Items models associated with the Transaction."""
-    ledgers: Mapped[List["Ledger"]] = relationship(
+    ledgers: Mapped[list["Ledger"]] = relationship(
         back_populates="transaction",
         primaryjoin="Transaction.id==Ledger.transaction_id",
     )
@@ -161,7 +160,7 @@ class Transaction(IsolatingMixin, Recyclable):
                 )
                 total += amount
                 if (
-                    line_item.tax.code in taxes.keys()  # pylint: disable=consider-iterating-dictionary
+                    line_item.tax.code in taxes  # pylint: disable=consider-iterating-dictionary
                 ):
                     taxes[line_item.tax.code]["amount"] += amount
                 else:
@@ -186,14 +185,14 @@ class Transaction(IsolatingMixin, Recyclable):
         """The amount of the Transaction."""
 
         return sum(
-            l.amount * l.quantity
+            line_item.amount * line_item.quantity
             + (
-                (l.amount * l.quantity * l.tax.rate / 100)
-                if l.tax_id and not l.tax_inclusive
+                (line_item.amount * line_item.quantity * line_item.tax.rate / 100)
+                if line_item.tax_id and not line_item.tax_inclusive
                 else 0
             )
-            for l in iter(self.line_items)
-            if l.credited != self.credited
+            for line_item in iter(self.line_items)
+            if line_item.credited != self.credited
         )
 
     def __repr__(self) -> str:
@@ -223,7 +222,10 @@ class Transaction(IsolatingMixin, Recyclable):
 
     def is_secure(self, session) -> bool:
         """Verify that the Transaction's Ledgers have not been tampered with."""
-        return all(l.hash == l.get_hash(session.connection()) for l in self.ledgers)
+        return all(
+            ledger.hash == ledger.get_hash(session.connection())
+            for ledger in self.ledgers
+        )
 
     def post(self, session) -> None:
         """

@@ -10,7 +10,6 @@ Represents the Base class for accounting models.
 
 """
 
-from typing import List
 from datetime import datetime
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -34,7 +33,7 @@ class Category(IsolatingMixin, Recyclable):
     """(`list` of `Account.AccountType`): The Account type of the members of the Category."""
 
     # relationships
-    accounts: Mapped[List["Account"]] = relationship(
+    accounts: Mapped[list["Account"]] = relationship(
         back_populates="category", foreign_keys=[Account.category_id]
     )
     """(list): Accounts that belong to the Category."""

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func
 from python_accounting.models import (
     Account,
     Transaction,
@@ -586,16 +586,16 @@ def test_transaction_tax(session, entity, currency):
 
     assert transaction.tax["total"] == Decimal(40)
     assert transaction.tax["taxes"] == {
-        "OTPT1": dict(
-            name="Output Vat one",
-            rate="10.00%",
-            amount=Decimal(10),
-        ),
-        "OTPT2": dict(
-            name="Output Vat two",
-            rate="15.00%",
-            amount=Decimal(30),
-        ),
+        "OTPT1": {
+            "name": "Output Vat one",
+            "rate": "10.00%",
+            "amount": Decimal(10),
+        },
+        "OTPT2": {
+            "name": "Output Vat two",
+            "rate": "15.00%",
+            "amount": Decimal(30),
+        },
     }
 
 

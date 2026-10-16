@@ -83,5 +83,69 @@ extend-exclude = ["docs/_build", "dist", ".venv"]
 [tool.ruff.format]
 docstring-code-format = false
 
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+    # "PL" (pylint) joins in the next commit, once the ~100 `# pylint: disable`
+    # comments can be rewritten as `# noqa` in the same change that drops
+    # pylint. Turning it on before then would need every live suppression to
+    # carry both comment styles at once.
+]
+# Every entry here is a deliberate decision, not a backlog. Adding one requires
+# a comment saying why.
+ignore = [
+    # Line length is owned by `ruff format`; E501 only ever fires on strings,
+    # comments and URLs that the formatter cannot split.
+    "E501",
+    # NEVER re-enable this. `== None` is load-bearing SQLAlchemy here: the
+    # soft-delete filter in database/event_listeners.py is the literal
+    # expression `cls.deleted_at == None`. On an instrumented attribute
+    # SQLAlchemy overloads `__eq__` so `== None` renders as `IS NULL`, whereas
+    # `is None` is an ordinary Python identity test that renders as
+    # `WHERE false`. "Fixing" these sites would silently hide every row.
+    "E711",
+    # This codebase names the first parameter `cls` consistently, including
+    # for plain instance methods reached through a mixin.
+    "N805",
+    # AccountingExeption (sic) is a public-API spelling. Renaming it would
+    # break every import; it needs a major release, not a lint run.
+    "N818",
+    # Import order is load-bearing in this package and cannot be sorted.
+    # python_accounting/models/__init__.py must import .base before .account:
+    # account.py, assignment.py and balance.py all do
+    # `from python_accounting.models import Base`, so `Base` has to be bound in
+    # the package namespace before those submodules execute. Alphabetically,
+    # .account sorts first, and the package stops importing at all.
+    #
+    # The general hazard is wider than that one file: the package's import
+    # graph is deliberately circular (see the PLC0415 suppression below and
+    # the quoted relationship targets in models/), so a reordering that is fine
+    # in isolation can break an import path the tests do not exercise.
+    # Re-enable I001 only once the import graph is demonstrably acyclic.
+    "I001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# SQLAlchemy resolves relationship targets and `Mapped["X"]` annotations by
+# name at mapper-configuration time. The names are quoted precisely so these
+# modules do not import each other; importing them for real creates a cycle
+# and breaks the package, which is why F821 cannot be fixed here.
+"python_accounting/models/*.py" = ["F821"]
+"python_accounting/mixins/*.py" = ["F821"]
+"python_accounting/database/session_overrides.py" = ["F821"]
+# The old gate was `pylint ./python_accounting`, so the test suite has never
+# been held to the complexity limits. Long linear test bodies and wide helper
+# signatures are idiomatic in tests; every other rule still applies there, and
+# the library above stays under these limits.
+"tests/*.py" = ["PLR0912", "PLR0913", "PLR0915"]
+
 [tool.pylint.main]
 init-hook = 'import sys; sys.path.append(".")'

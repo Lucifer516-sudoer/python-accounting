@@ -11,7 +11,6 @@ Represents an interface that relates recycled objects with the recycled models.
 """
 
 from datetime import datetime
-from typing import List
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String
 from python_accounting.models import Base
@@ -31,7 +30,7 @@ class Recyclable(Base):
     """(str): The class name of the recycled model."""
 
     # relationships
-    history: Mapped[List["Recycled"]] = relationship()
+    history: Mapped[list["Recycled"]] = relationship()
     """(list): A list of deletions and restorations for the model."""
 
     __mapper_args__ = {"polymorphic_on": recycled_type}

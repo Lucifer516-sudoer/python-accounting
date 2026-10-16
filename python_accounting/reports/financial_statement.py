@@ -67,7 +67,7 @@ class FinancialStatement:
         """(dict): The Accounts in the sections of the report, by Account category."""
         self.balances = {k: {} for k in section_names}
         """(dict): The total balances of the Accounts in the sections of the report, by Account category."""
-        self.totals = {k: 0 for k in section_names}
+        self.totals = dict.fromkeys(section_names, 0)
         """(dict): The Total balances of Accounts in the sections of the report."""
         self.result_amounts = {}
         """(dict): The amounts results of the report."""
@@ -89,10 +89,10 @@ class FinancialStatement:
                 balances = Account.section_balances(
                     self.session, [account_type], start_date, end_date, full_balance
                 )
-                account_type = Account.AccountType[account_type].value
+                account_name = Account.AccountType[account_type].value
                 if balances["closing"] != 0:
-                    self.accounts[section][account_type] = balances["categories"]
-                    self.balances[section][account_type] = balances["closing"]
+                    self.accounts[section][account_name] = balances["categories"]
+                    self.balances[section][account_name] = balances["closing"]
                     self.totals[section] += balances["closing"]
                     self.balances[
                         "debit" if balances["closing"] >= 0 else "credit"

@@ -122,7 +122,7 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
 
         """
         balances = {"debits": 0, "credits": 0, "accounts": []}
-        year = session.entity.reporting_period.calendar_year if not year else year
+        year = year or session.entity.reporting_period.calendar_year
 
         for account in session.scalars(select(Account)).all():
             balance = account.opening_balance(session, year)

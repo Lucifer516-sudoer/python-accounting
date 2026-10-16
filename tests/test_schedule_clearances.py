@@ -69,7 +69,7 @@ def _assert_schedule(session, account, subject, cutoff, cleared, bracket, start=
         assert subject.uncleared_amount == outstanding
 
     aging = AgingSchedule(session, account.account_type, cutoff)
-    expected = {key: 0 for key in AgingSchedule.brackets}
+    expected = dict.fromkeys(AgingSchedule.brackets, 0)
     expected[bracket] = outstanding
     assert aging.balances == expected
     assert aging.accounts == ([account] if outstanding else [])

@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from python_accounting.models import Account, Tax, LineItem, Balance
+from python_accounting.models import Account, LineItem, Balance
 from python_accounting.transactions import SupplierPayment
 from python_accounting.exceptions import (
     InvalidMainAccountError,

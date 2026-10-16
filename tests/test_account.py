@@ -100,7 +100,7 @@ def test_account_validation(session, entity, currency):
     session.flush()
 
     account = session.get(Account, account.id)
-    account.name == "Test Account Three"
+    assert account.name == "Test Account Three"
     assert account.account_code == 50002
 
     category = Category(
@@ -164,7 +164,6 @@ def test_account_validation(session, entity, currency):
 def test_account_isolation(session, entity, currency):
     """Tests the isolation of account objects by entity"""
 
-    year = datetime.today().year
     entity2 = Entity(name="Test Entity Two")
     session.add(entity2)
     session.flush()
@@ -389,12 +388,12 @@ def test_account_closing_balance(session, entity, currency):
     session.flush()
 
     assert account1.closing_balance(session) == 90
-    assert transaction.is_posted == False
+    assert transaction.is_posted is False
 
     transaction.post(session)
 
     assert account1.closing_balance(session) == 65
-    assert transaction.is_posted == True
+    assert transaction.is_posted is True
     assert (
         account1.closing_balance(session, datetime.now() - relativedelta(days=1)) == 90
     )

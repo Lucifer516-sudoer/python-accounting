@@ -97,7 +97,7 @@ class Config:
     """
 
     def __init__(self, config_file) -> None:
-        with open(config_file, "r", -1, "UTF-8") as f:
+        with open(config_file, encoding="UTF-8") as f:
             configuration = toml.load(f)
             for k, v in configuration.items():
                 setattr(self, k, v)

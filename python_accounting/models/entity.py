@@ -10,7 +10,6 @@ Represents the person, real or artifial engaging in financial Transactions.
 
 """
 
-from typing import List
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Boolean, ForeignKey
 from python_accounting.models import Recyclable, ReportingPeriod
@@ -60,7 +59,7 @@ class Entity(Recyclable):
         foreign_keys=[reporting_period_id]
     )
     """(ReportingPeriod): The current Reporting Period of the Entity."""
-    users: Mapped[List["User"]] = relationship(back_populates="entity")
+    users: Mapped[list["User"]] = relationship(back_populates="entity")
     """(`list` of User): A list of Users that belong to the Entity."""
 
     def __repr__(self) -> str:

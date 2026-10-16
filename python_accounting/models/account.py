@@ -176,12 +176,7 @@ class Account(IsolatingMixin, Recyclable):
                     if account.category is None
                     else (account.category_id, account.category.name)
                 )
-                if (
-                    category_name
-                    in balances[  # pylint: disable=consider-iterating-dictionary
-                        "categories"  # pylint: disable=consider-iterating-dictionary
-                    ].keys()  # pylint: disable=consider-iterating-dictionary
-                ):
+                if category_name in balances["categories"]:
                     balances["categories"][category_name]["total"] += account.closing
                     balances["categories"][category_name]["accounts"].append(account)
                 else:
@@ -301,10 +296,10 @@ class Account(IsolatingMixin, Recyclable):
         """
         # pylint: enable=line-too-long
         from python_accounting.models import (  # pylint: disable=import-outside-toplevel
-            Transaction,
-            Ledger,
             Assignment,
             Balance,
+            Ledger,
+            Transaction,
         )
 
         if schedule and self.account_type not in [

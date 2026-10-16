@@ -11,7 +11,7 @@ Represents the individual entries in a Transaction that will eventually be poste
 """
 
 from decimal import Decimal
-from typing import List, Any
+from typing import Any
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import ForeignKey, Boolean, func, String
 from sqlalchemy.types import DECIMAL
@@ -61,7 +61,7 @@ class LineItem(IsolatingMixin, Recyclable):
     """(`Tax`, optional): The Tax model associated with the Line Item."""
     transaction: Mapped["Transaction"] = relationship(foreign_keys=[transaction_id])
     """(`Transaction`, optional): The Transaction model associated with the Line Item."""
-    ledgers: Mapped[List["Ledger"]] = relationship(
+    ledgers: Mapped[list["Ledger"]] = relationship(
         back_populates="line_item",
         primaryjoin="LineItem.id==Ledger.line_item_id",
     )

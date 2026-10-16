@@ -8,6 +8,11 @@
 """
 Provides models for accounting objects.
 
+The order of the imports below is load-bearing. `account`, `assignment` and
+`balance` all do `from python_accounting.models import Base`, so `Base` must be
+bound into this package's namespace before they are imported. Sorting these
+imports alphabetically puts `account` first and the package stops importing.
+Do not reorder, and do not run isort/ruff-I001 over this file.
 """
 
 from .base import Base
@@ -25,3 +30,21 @@ from .balance import Balance
 from .tax import Tax
 from .ledger import Ledger
 from .assignment import Assignment
+
+__all__ = [
+    "Account",
+    "Assignment",
+    "Balance",
+    "Base",
+    "Category",
+    "Currency",
+    "Entity",
+    "Ledger",
+    "LineItem",
+    "Recyclable",
+    "Recycled",
+    "ReportingPeriod",
+    "Tax",
+    "Transaction",
+    "User",
+]
