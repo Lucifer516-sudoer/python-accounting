@@ -11,10 +11,15 @@ Represents an account model that has been recycled.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
 from python_accounting.mixins import IsolatingMixin
 from .base import Base
+
+if TYPE_CHECKING:
+    from python_accounting.models.recyclable import Recyclable
 
 
 class Recycled(IsolatingMixin, Base):
@@ -24,7 +29,7 @@ class Recycled(IsolatingMixin, Base):
 
     recycled_id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"))
     """(int): The id of the model that has been recycled."""
-    restored_at: Mapped[datetime] = mapped_column(nullable=True)
+    restored_at: Mapped[datetime | None] = mapped_column(nullable=True)
     """(`datetime`, optional): The time the model was restored."""
 
     # relationships
