@@ -144,7 +144,9 @@ def test_reporting_period_dates(session, entity):
 
     assert ReportingPeriod.date_year() == current_year
     assert (
-        ReportingPeriod.date_year(datetime.strptime(f"{current_year}-06-03", "%Y-%m-%d"), entity)
+        ReportingPeriod.date_year(
+            datetime.strptime(f"{current_year}-06-03", "%Y-%m-%d"), entity
+        )
         == current_year
     )
 
@@ -164,7 +166,9 @@ def test_reporting_period_dates(session, entity):
     entity.year_start = 4
 
     assert (
-        ReportingPeriod.date_year(datetime.strptime(f"{current_year}-03-03", "%Y-%m-%d"), entity)
+        ReportingPeriod.date_year(
+            datetime.strptime(f"{current_year}-03-03", "%Y-%m-%d"), entity
+        )
         == current_year - 1
     )
 
@@ -195,7 +199,9 @@ def test_reporting_period_from_date(session, entity):
 
     # Now the current year should not have a reporting period
     with pytest.raises(MissingReportingPeriodError):
-        ReportingPeriod.get_period(session, datetime.strptime(f"{current_year}-03-03", "%Y-%m-%d"))
+        ReportingPeriod.get_period(
+            session, datetime.strptime(f"{current_year}-03-03", "%Y-%m-%d")
+        )
 
     new_reporting_period = ReportingPeriod(
         calendar_year=current_year,
@@ -206,6 +212,8 @@ def test_reporting_period_from_date(session, entity):
     session.commit()
 
     assert (
-        ReportingPeriod.get_period(session, datetime.strptime(f"{current_year}-03-03", "%Y-%m-%d"))
+        ReportingPeriod.get_period(
+            session, datetime.strptime(f"{current_year}-03-03", "%Y-%m-%d")
+        )
         == new_reporting_period
     )

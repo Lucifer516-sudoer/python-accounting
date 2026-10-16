@@ -120,9 +120,7 @@ class AssigningMixin:
             )
 
             assignment.amount = (
-                balance
-                if uncleared_amount > balance
-                else uncleared_amount
+                balance if uncleared_amount > balance else uncleared_amount
             )
             balance -= assignment.amount
             session.add(assignment)

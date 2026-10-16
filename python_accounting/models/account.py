@@ -8,6 +8,7 @@
 """
 Represents an Account, the basic unit of accounting that groups the transactions of an Entity.
 """
+
 import warnings
 from decimal import Decimal
 from datetime import datetime

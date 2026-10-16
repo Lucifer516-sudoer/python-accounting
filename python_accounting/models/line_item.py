@@ -84,8 +84,8 @@ class LineItem(IsolatingMixin, Recyclable):
         super().__init__(**kw)
 
     def __repr__(self) -> str:
-        return f"""{self.account.name if self.account else ''}
-         <{'Credit' if self.credited else 'Debit'}>: {self.amount * self.quantity}"""
+        return f"""{self.account.name if self.account else ""}
+         <{"Credit" if self.credited else "Debit"}>: {self.amount * self.quantity}"""
 
     def validate(self, _) -> None:
         """

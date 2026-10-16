@@ -13,6 +13,7 @@ hashing and dates configurations. For more extensive custom configurations, you 
 the class with a custom config.tml file.
 
 """
+
 import os
 import pathlib
 import toml

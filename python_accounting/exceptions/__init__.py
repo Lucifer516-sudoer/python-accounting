@@ -141,7 +141,7 @@ class InvalidLineItemAccountError(AccountingExeption):
 
     def __init__(self, classname, account_types: list) -> None:
         self.message = f"""{classname} Transaction Line Item Account type must
-         be one of: {', '.join(account_types)}."""
+         be one of: {", ".join(account_types)}."""
         super().__init__()
 
 
@@ -316,7 +316,7 @@ class UnassignableTransactionError(AccountingExeption):
 
     def __init__(self, classname, transaction_types: list) -> None:
         self.message = f"""{classname} Transaction cannot be assigned. Assignment
-         Transaction type must be one of: {', '.join(transaction_types)}."""
+         Transaction type must be one of: {", ".join(transaction_types)}."""
         super().__init__()
 
 
@@ -331,7 +331,7 @@ class UnclearableTransactionError(AccountingExeption):
 
     def __init__(self, classname, transaction_types: list) -> None:
         self.message = f"""{classname} Transaction cannot be cleared. Assignment
-         assigned transaction type be must one of: {', '.join(transaction_types)}."""
+         assigned transaction type be must one of: {", ".join(transaction_types)}."""
         super().__init__()
 
 

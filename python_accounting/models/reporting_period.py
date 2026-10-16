@@ -9,6 +9,7 @@
 Represents a financial cycle of an Entity.
 
 """
+
 from enum import Enum
 from datetime import datetime
 from dateutil.relativedelta import relativedelta

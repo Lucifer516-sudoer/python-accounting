@@ -10,6 +10,7 @@ This mixin provides logic for handling events in sqlalchemy's orm lifecycle
 that are relevant to accounting.
 
 """
+
 from datetime import datetime
 
 from sqlalchemy.orm.session import Session

@@ -9,6 +9,7 @@
 Represents a financial Transaction.
 
 """
+
 from typing import List, Set
 from datetime import datetime
 from decimal import Decimal
@@ -160,8 +161,7 @@ class Transaction(IsolatingMixin, Recyclable):
                 )
                 total += amount
                 if (
-                    line_item.tax.code
-                    in taxes.keys()  # pylint: disable=consider-iterating-dictionary
+                    line_item.tax.code in taxes.keys()  # pylint: disable=consider-iterating-dictionary
                 ):
                     taxes[line_item.tax.code]["amount"] += amount
                 else:

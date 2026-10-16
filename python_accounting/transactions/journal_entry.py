@@ -10,6 +10,7 @@ This is the most powerful Transaction in the entire system, capable of
     directly accessing the ledger.
 
 """
+
 from typing import Any
 from python_accounting.models import Transaction
 from python_accounting.mixins import AssigningMixin, ClearingMixin

@@ -9,6 +9,7 @@
 Represents the Base class for accounting models.
 
 """
+
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 

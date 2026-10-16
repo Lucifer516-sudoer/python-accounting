@@ -9,6 +9,7 @@
 Represents the amount outstanding on a Transaction from a previous Reporting Period.
 
 """
+
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -169,7 +170,6 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
             raise InvalidBalanceAccountError
 
         if self.transaction_type not in [t.value for t in Balance.BalanceTransactions]:
-
             raise InvalidBalanceTransactionError
 
         if (

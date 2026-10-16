@@ -9,6 +9,7 @@
 Represents the movement of liquid funds of an Entity.
 
 """
+
 from datetime import datetime
 from python_accounting.reports.financial_statement import FinancialStatement
 from python_accounting.config import config

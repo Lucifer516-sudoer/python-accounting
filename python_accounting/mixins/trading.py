@@ -9,6 +9,7 @@
 Provides functionality to Transactions that can by and sell goods and services for an Entity.
 
 """
+
 from python_accounting.exceptions import (
     InvalidMainAccountError,
     InvalidLineItemAccountError,

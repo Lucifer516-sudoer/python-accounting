@@ -9,6 +9,7 @@
 Provides model validastion extensions for specific financial Transactions.
 
 """
+
 from .client_invoice import ClientInvoice
 from .cash_sale import CashSale
 from .supplier_bill import SupplierBill

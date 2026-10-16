@@ -9,6 +9,7 @@
 Represents the person, real or artifial engaging in financial Transactions.
 
 """
+
 from typing import List
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Boolean, ForeignKey

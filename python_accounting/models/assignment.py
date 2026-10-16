@@ -9,6 +9,7 @@
 Represents an matching between Transactions that have an opposite effect on an Account.
 
 """
+
 import importlib
 from decimal import Decimal
 from datetime import datetime

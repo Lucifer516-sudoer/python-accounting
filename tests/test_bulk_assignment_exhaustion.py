@@ -38,14 +38,20 @@ def invoices(session, entity, currency, post_document, fixed_today):
     # Create the documents out of date order to distinguish FIFO from insertion order.
     documents = {
         day: post_document(
-            ClientInvoice, account, revenue,
-            datetime(fixed_today.year, 1, day), "100",
+            ClientInvoice,
+            account,
+            revenue,
+            datetime(fixed_today.year, 1, day),
+            "100",
         )
         for day in (6, 7, 5)
     }
     other_invoice = post_document(
-        ClientInvoice, other_account, revenue,
-        datetime(fixed_today.year, 1, 2), "100",
+        ClientInvoice,
+        other_account,
+        revenue,
+        datetime(fixed_today.year, 1, 2),
+        "100",
     )
     return account, bank, [documents[day] for day in (5, 6, 7)], other_invoice
 
@@ -86,8 +92,7 @@ def test_bulk_assignment_stops_at_available_funds(
     assignments = _assignments(payment, session)
     expected_amounts = [Decimal(value) for value in expected]
     assert [(a.assigned_id, a.amount) for a in assignments] == [
-        (document.id, value)
-        for document, value in zip(documents, expected_amounts)
+        (document.id, value) for document, value in zip(documents, expected_amounts)
     ]
     assert all(a.amount > 0 for a in assignments)
     assert all(a.transaction_id == payment.id for a in assignments)
@@ -95,7 +100,9 @@ def test_bulk_assignment_stops_at_available_funds(
     assert all(a.assigned_type == ClientInvoice.__name__ for a in assignments)
     assert payment.balance(session) == balance_before - sum(expected_amounts)
     assert payment.balance(session) >= 0
-    for document, cleared in zip(documents, expected_amounts + [0] * (3 - len(expected))):
+    for document, cleared in zip(
+        documents, expected_amounts + [0] * (3 - len(expected))
+    ):
         assert document.cleared(session) == cleared
         assert document.cleared(session) <= document.amount
     assert other_invoice.cleared(session) == 0
@@ -138,12 +145,16 @@ def test_bulk_assignment_respects_lifetime_source_capacity(
     assert all(a.amount > 0 for a in assignments)
     assert payment.balance(session) == 0
     assert documents[0].cleared(session) == 100
-    assert documents[1].cleared(session) == sum(Decimal(value) for value in expected_new)
+    assert documents[1].cleared(session) == sum(
+        Decimal(value) for value in expected_new
+    )
     assert documents[2].cleared(session) == 0
 
     snapshot = [(a.id, a.assigned_id, a.amount) for a in assignments]
     assert payment.bulk_assign(session) is None
-    assert [(a.id, a.assigned_id, a.amount) for a in _assignments(payment, session)] == snapshot
+    assert [
+        (a.id, a.assigned_id, a.amount) for a in _assignments(payment, session)
+    ] == snapshot
 
 
 def test_exhausted_source_still_evaluates_schedule(
@@ -171,21 +182,28 @@ def test_exhaustion_preserves_future_target_reservations(
     """Source exhaustion and historical reports both retain lifetime target capacity."""
     account, bank, documents, _ = invoices
     revenue = session.get(Account, next(iter(documents[0].line_items)).account_id)
-    documents.append(post_document(
-        ClientInvoice, account, revenue,
-        datetime(fixed_today.year, 1, 8), "100",
-    ))
+    documents.append(
+        post_document(
+            ClientInvoice,
+            account,
+            revenue,
+            datetime(fixed_today.year, 1, 8),
+            "100",
+        )
+    )
     future_date = datetime(fixed_today.year, 2, 15)
     for document, reserved in zip(documents, ["100", "40"]):
         reservation = post_document(ClientReceipt, account, bank, future_date, reserved)
-        session.add(Assignment(
-            assignment_date=future_date,
-            transaction_id=reservation.id,
-            assigned_id=document.id,
-            assigned_type=ClientInvoice.__name__,
-            entity_id=account.entity_id,
-            amount=Decimal(reserved),
-        ))
+        session.add(
+            Assignment(
+                assignment_date=future_date,
+                transaction_id=reservation.id,
+                assigned_id=document.id,
+                assigned_type=ClientInvoice.__name__,
+                entity_id=account.entity_id,
+                amount=Decimal(reserved),
+            )
+        )
         session.flush()
         assert document.cleared(session, end_date=fixed_today) == 0
 
@@ -195,14 +213,15 @@ def test_exhaustion_preserves_future_target_reservations(
     assignments = _assignments(payment, session)
     expected_amounts = [Decimal(value) for value in expected]
     assert [(a.assigned_id, a.amount) for a in assignments] == [
-        (document.id, value)
-        for document, value in zip(documents[1:], expected_amounts)
+        (document.id, value) for document, value in zip(documents[1:], expected_amounts)
     ]
     assert all(a.amount > 0 for a in assignments)
     assert payment.balance(session) == 0
     assert sum(a.amount for a in assignments) == Decimal(amount)
     assert [document.cleared(session) for document in documents] == [
-        100, 40 + expected_amounts[0],
-        expected_amounts[1] if len(expected_amounts) > 1 else 0, 0,
+        100,
+        40 + expected_amounts[0],
+        expected_amounts[1] if len(expected_amounts) > 1 else 0,
+        0,
     ]
     assert _ledger_values(session) == ledger_before

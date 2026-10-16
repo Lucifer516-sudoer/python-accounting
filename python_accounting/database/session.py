@@ -9,6 +9,7 @@
 Provides accounting specific overrides for some sqlalchemy session methods.
 
 """
+
 from sqlalchemy.orm.session import Session
 
 from python_accounting.models import Entity

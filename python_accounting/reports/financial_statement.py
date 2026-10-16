@@ -9,6 +9,7 @@
 Represents an abstraction of a financial statement according to IFRS/GAAP.
 
 """
+
 from datetime import datetime
 from strenum import StrEnum
 from sqlalchemy.orm.session import Session
@@ -100,7 +101,7 @@ class FinancialStatement:
     def _print_title(self) -> str:
         # pylint: disable=line-too-long
         period = (
-            f"""For the period: {self.start_date.strftime(configuration.dates['long'])} to {self.end_date.strftime(configuration.dates['long'])}"""
+            f"""For the period: {self.start_date.strftime(configuration.dates["long"])} to {self.end_date.strftime(configuration.dates["long"])}"""
             if hasattr(self, "start_date")
             else f"As at {self.end_date.strftime(configuration.dates['long'])}"
         )

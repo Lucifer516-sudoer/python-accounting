@@ -9,6 +9,7 @@
 Represents a Debit Note Transaction.
 
 """
+
 from typing import Any
 from python_accounting.models import Transaction
 from python_accounting.mixins import BuyingMixin, AssigningMixin

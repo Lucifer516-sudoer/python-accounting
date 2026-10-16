@@ -9,6 +9,7 @@
 Provides models for accounting objects.
 
 """
+
 from .base import Base
 from .recyclable import Recyclable
 from .currency import Currency

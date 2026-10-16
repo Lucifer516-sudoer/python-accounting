@@ -82,7 +82,10 @@ def _statement_values(session, account, cutoff):
     return (
         statement["opening_balance"],
         statement["closing_balance"],
-        [(row.id, row.debit, row.credit, row.balance) for row in statement["transactions"]],
+        [
+            (row.id, row.debit, row.credit, row.balance)
+            for row in statement["transactions"]
+        ],
     )
 
 
@@ -151,7 +154,12 @@ def test_historical_partial_and_full_clearance(
         )
         for day in (15, 28):
             _assert_schedule(
-                session, account, subject, datetime(year, 2, day), lifetime, "31 - 90 days"
+                session,
+                account,
+                subject,
+                datetime(year, 2, day),
+                lifetime,
+                "31 - 90 days",
             )
         assert account.closing_balance(session, cutoff) == (-100 if payable else 100)
         assert _statement_values(session, account, cutoff) == before
@@ -181,12 +189,19 @@ def test_clearance_cutoff_boundaries(
         _assign(session, invoice, payment, date, amount)
 
     _assert_schedule(
-        session, account, invoice, datetime(year, 1, 31), 50, "current",
+        session,
+        account,
+        invoice,
+        datetime(year, 1, 31),
+        50,
+        "current",
         start=datetime(year, 1, 31),
     )
     _assert_schedule(session, account, invoice, None, 50, "current")
     assert invoice.cleared(session, end_date=end_of_day) == 50
-    assert invoice.cleared(session, end_date=end_of_day - timedelta(microseconds=1)) == 20
+    assert (
+        invoice.cleared(session, end_date=end_of_day - timedelta(microseconds=1)) == 20
+    )
     assert invoice.cleared(session, end_date=next_day) == 100
     assert invoice.cleared(session) == 100
     assert invoice.cleared(session, end_date=None) == 100
@@ -198,7 +213,13 @@ def test_clearance_cutoff_boundaries(
     [(1, 2, 100), (2, 1, 0)],
 )
 def test_assignment_date_controls_clearance(
-    session, entity, currency, post_document, payment_month, assignment_month, outstanding
+    session,
+    entity,
+    currency,
+    post_document,
+    payment_month,
+    assignment_month,
+    outstanding,
 ):
     """Allocation dates remain independent of the payment's ledger date."""
     year = datetime.now().year
@@ -241,7 +262,9 @@ def test_bulk_assignment_keeps_lifetime_capacity(
     year = fixed_today.year
     account, revenue, bank = _accounts(session, entity, currency)
     first = post_document(ClientInvoice, account, revenue, datetime(year, 1, 5), "100")
-    second = post_document(ClientInvoice, account, revenue, datetime(year, 1, 10), "100")
+    second = post_document(
+        ClientInvoice, account, revenue, datetime(year, 1, 10), "100"
+    )
     third = post_document(ClientInvoice, account, revenue, datetime(year, 1, 15), "40")
     future_date = datetime(year, 2, 15)
     for subject, amount in [(first, "100"), (second, "40")]:

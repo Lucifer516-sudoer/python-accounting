@@ -9,6 +9,7 @@
 Represents an entry in the Ledger.
 
 """
+
 import hashlib
 from datetime import datetime
 from copy import deepcopy

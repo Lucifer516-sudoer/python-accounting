@@ -44,7 +44,7 @@ postgres = ["psycopg2>=2.9.9,<3.0"]
 
 [dependency-groups]
 test = ["pytest>=7.4.3,<8.0"]
-lint = ["pylint>=3.1.0,<4.0", "pre-commit>=4.0.0,<5.0"]
+lint = ["pylint>=3.1.0,<4.0", "pre-commit>=4.0.0,<5.0", "ruff>=0.14.10,<0.15"]
 docs = [
     "sphinx-autoapi>=3.0.0,<4.0",
     "sphinx-rtd-theme>=2.0.0,<3.0",
@@ -72,6 +72,16 @@ include = ["/python_accounting", "/config.toml", "/tests", "/README.md", "/LICEN
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+# Was 100 when the codebase was written to pylint's width; 88 is ruff's default
+# and is what the rest of the ecosystem formats to.
+line-length = 88
+target-version = "py39"
+extend-exclude = ["docs/_build", "dist", ".venv"]
+
+[tool.ruff.format]
+docstring-code-format = false
 
 [tool.pylint.main]
 init-hook = 'import sys; sys.path.append(".")'

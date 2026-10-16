@@ -10,6 +10,7 @@ installs it. The source tree cannot catch that, so this does.
 
 Exits 0 if the layout is correct, 1 otherwise.
 """
+
 import shutil
 import subprocess
 import sys
@@ -42,8 +43,14 @@ def main() -> int:
 
     if "config.toml" not in names:
         print("config.toml is NOT at the wheel root.", file=sys.stderr)
-        print("python_accounting.config will fail to find it once installed.", file=sys.stderr)
-        print(f"wheel contents: {sorted(n for n in names if '/' not in n)}", file=sys.stderr)
+        print(
+            "python_accounting.config will fail to find it once installed.",
+            file=sys.stderr,
+        )
+        print(
+            f"wheel contents: {sorted(n for n in names if '/' not in n)}",
+            file=sys.stderr,
+        )
         return 1
 
     if "python_accounting/__init__.py" in names:

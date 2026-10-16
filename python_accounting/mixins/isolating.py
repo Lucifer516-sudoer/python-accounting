@@ -9,6 +9,7 @@
 Provides functionality to scope accounting objects to a single Entity.
 
 """
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
 from sqlalchemy import ForeignKey
 

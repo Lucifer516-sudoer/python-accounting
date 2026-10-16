@@ -9,6 +9,7 @@
 Provides accounting specific date utilities.
 
 """
+
 from datetime import datetime
 from python_accounting.models.reporting_period import ReportingPeriod
 
