@@ -140,8 +140,10 @@ ignore = [
     # This codebase names the first parameter `cls` consistently, including
     # for plain instance methods reached through a mixin.
     "N805",
-    # AccountingExeption (sic) is a public-API spelling. Renaming it would
-    # break every import; it needs a major release, not a lint run.
+    # The base exception class is `AccountingException` (2.0.0 corrected the
+    # original misspelt `AccountingExeption`, kept as a deprecated alias);
+    # neither name ends in the "Error" suffix N818 wants, and both spellings
+    # are public API that cannot be changed.
     "N818",
     # Import order is load-bearing in this package and cannot be sorted.
     # python_accounting/models/__init__.py must import .base before .account:
