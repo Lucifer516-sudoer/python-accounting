@@ -27,6 +27,8 @@ from python_accounting.exceptions import (
 class Tax(IsolatingMixin, Recyclable):
     """Represents a Tax applied to a Transaction's Line Item."""
 
+    __tablename__ = "tax"
+
     __mapper_args__ = {"polymorphic_identity": "Tax"}
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)

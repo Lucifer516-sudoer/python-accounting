@@ -19,6 +19,8 @@ from python_accounting.models import Recyclable
 class Currency(IsolatingMixin, Recyclable):
     """Represents a Currency in terms of a label and an ISO Currency Code."""
 
+    __tablename__ = "currency"
+
     __mapper_args__ = {"polymorphic_identity": "Currency"}
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)

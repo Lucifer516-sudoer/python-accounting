@@ -20,6 +20,8 @@ from .base import Base
 class Recycled(IsolatingMixin, Base):
     """Represents an accounting model that has been recycled."""
 
+    __tablename__ = "recycled"
+
     recycled_id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"))
     """(int): The id of the model that has been recycled."""
     restored_at: Mapped[datetime] = mapped_column(nullable=True)

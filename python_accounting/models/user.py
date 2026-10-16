@@ -19,6 +19,8 @@ from .base import Base
 class User(IsolatingMixin, Base):
     """Represents an authenticatable User with access to an Entity."""
 
+    __tablename__ = "user"
+
     name: Mapped[str] = mapped_column(String(255))
     """(str): The name of the User."""
     email: Mapped[str] = mapped_column(String(255))

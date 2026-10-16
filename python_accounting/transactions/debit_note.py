@@ -18,7 +18,6 @@ from python_accounting.mixins import BuyingMixin, AssigningMixin
 class DebitNote(BuyingMixin, AssigningMixin, Transaction):
     """Class for the Debit Note Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.DEBIT_NOTE,
     }

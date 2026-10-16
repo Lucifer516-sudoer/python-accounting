@@ -18,7 +18,6 @@ from python_accounting.mixins import SellingMixin, AssigningMixin
 class CreditNote(SellingMixin, AssigningMixin, Transaction):
     """Class for the Credit Note Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.CREDIT_NOTE,
     }

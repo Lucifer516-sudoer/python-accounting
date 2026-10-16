@@ -18,7 +18,6 @@ from python_accounting.mixins.trading import TradingMixin
 class ContraEntry(TradingMixin, Transaction):
     """Class for the Contra Entry Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.CONTRA_ENTRY,
     }

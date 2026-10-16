@@ -23,7 +23,6 @@ class SupplierPayment(
 ):
     """Class for the Supplier Payment Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.SUPPLIER_PAYMENT,
     }

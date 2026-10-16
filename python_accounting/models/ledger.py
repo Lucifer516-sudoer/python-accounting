@@ -26,6 +26,8 @@ from python_accounting.models import Recyclable, Balance, Transaction
 class Ledger(IsolatingMixin, Recyclable):
     """Represents an entry in the Ledger. (Should never have to be invoked directly)."""
 
+    __tablename__ = "ledger"
+
     __mapper_args__ = {"polymorphic_identity": "Ledger"}
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)

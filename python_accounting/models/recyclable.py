@@ -21,6 +21,8 @@ class Recyclable(Base):
     Interface for associating recycled objects with its models.
     """
 
+    __tablename__ = "recyclable"
+
     deleted_at: Mapped[datetime] = mapped_column(nullable=True)
     """(`datetime`, optional): The time the model was recycled."""
     destroyed_at: Mapped[datetime] = mapped_column(nullable=True)

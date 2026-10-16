@@ -37,6 +37,8 @@ from python_accounting.exceptions import (
 class Assignment(IsolatingMixin, Base):
     """Represents an assigment of a clearable type to an assignable Transaction."""
 
+    __tablename__ = "assignment"
+
     clearables = [
         Transaction.TransactionType[t]
         for t in config.transactions["clearables"]["types"]

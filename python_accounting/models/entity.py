@@ -18,6 +18,8 @@ from python_accounting.models import Recyclable, ReportingPeriod
 class Entity(Recyclable):
     """Represents the Reporting Entity."""
 
+    __tablename__ = "entity"
+
     __mapper_args__ = {"polymorphic_identity": "Entity"}
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)

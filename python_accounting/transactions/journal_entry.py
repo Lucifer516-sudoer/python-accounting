@@ -24,7 +24,6 @@ from python_accounting.exceptions import (
 class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
     """Class for the Journal Entry Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.JOURNAL_ENTRY,
     }

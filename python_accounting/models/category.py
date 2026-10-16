@@ -23,6 +23,8 @@ from python_accounting.utils.dates import get_dates
 class Category(IsolatingMixin, Recyclable):
     """Represents a grouping of Accounts of the same type."""
 
+    __tablename__ = "category"
+
     __mapper_args__ = {"polymorphic_identity": "Category"}
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)

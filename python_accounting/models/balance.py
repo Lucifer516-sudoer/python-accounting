@@ -36,6 +36,8 @@ from python_accounting.reports import IncomeStatement
 class Balance(IsolatingMixin, ClearingMixin, Recyclable):
     """Represents a Balance brought down from previous Reporting Periods."""
 
+    __tablename__ = "balance"
+
     BalanceType = StrEnum("BalanceType", {"DEBIT": "Debit", "CREDIT": "Credit"})
     """(StrEnum): The double entry types of Balances."""
     BalanceTransactions = StrEnum(

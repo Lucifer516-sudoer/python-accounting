@@ -18,7 +18,6 @@ from python_accounting.mixins import BuyingMixin
 class CashPurchase(BuyingMixin, Transaction):
     """Class for the Cash Purchase Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.CASH_PURCHASE,
     }

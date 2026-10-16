@@ -34,6 +34,8 @@ account_type_enum = StrEnum(
 class Account(IsolatingMixin, Recyclable):
     """Represents an account which groups related Transactions."""
 
+    __tablename__ = "account"
+
     # Chart of Accounts types
     AccountType = account_type_enum
     """(StrEnum): Account Types as defined by IFRS and GAAP."""

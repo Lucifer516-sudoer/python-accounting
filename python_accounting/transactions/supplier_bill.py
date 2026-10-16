@@ -18,7 +18,6 @@ from python_accounting.mixins import BuyingMixin, ClearingMixin
 class SupplierBill(BuyingMixin, ClearingMixin, Transaction):
     """Class for the Supplier Bill Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.SUPPLIER_BILL,
     }

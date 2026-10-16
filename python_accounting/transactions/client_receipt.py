@@ -19,7 +19,6 @@ from python_accounting.mixins.trading import TradingMixin
 class ClientReceipt(TradingMixin, AssigningMixin, Transaction):
     """Class for the Client Receipt Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.CLIENT_RECEIPT,
     }

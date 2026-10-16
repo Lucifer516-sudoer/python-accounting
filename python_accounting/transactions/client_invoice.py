@@ -18,7 +18,6 @@ from python_accounting.mixins import SellingMixin, ClearingMixin
 class ClientInvoice(SellingMixin, ClearingMixin, Transaction):
     """Class for the Client Invoice Transaction."""
 
-    __tablename__ = None
     __mapper_args__ = {
         "polymorphic_identity": Transaction.TransactionType.CLIENT_INVOICE,
     }
