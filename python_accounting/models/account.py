@@ -12,6 +12,7 @@ Represents an Account, the basic unit of accounting that groups the transactions
 import warnings
 from decimal import Decimal
 from datetime import datetime
+from typing import TYPE_CHECKING, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, aliased
 from sqlalchemy import String, ForeignKey, Enum, func, inspect, select, or_, exc
@@ -26,8 +27,41 @@ from python_accounting.exceptions import (
 )
 from python_accounting.utils.dates import get_dates
 
-account_type_enum = StrEnum(
-    "AccountType", {k: v["label"] for k, v in config.accounts["types"].items()}
+if TYPE_CHECKING:
+
+    class AccountType(StrEnum):
+        """Stub mirroring the config-driven AccountType members.
+
+        The real AccountType is created from config.toml at import time, so the
+        type checkers cannot see its members. This class exists only for them;
+        tests/test_enum_stubs.py guards it against drifting from the real enum.
+        """
+
+        NON_CURRENT_ASSET = ""
+        CONTRA_ASSET = ""
+        INVENTORY = ""
+        BANK = ""
+        CURRENT_ASSET = ""
+        RECEIVABLE = ""
+        NON_CURRENT_LIABILITY = ""
+        CONTROL = ""
+        CURRENT_LIABILITY = ""
+        PAYABLE = ""
+        RECONCILIATION = ""
+        EQUITY = ""
+        OPERATING_REVENUE = ""
+        OPERATING_EXPENSE = ""
+        NON_OPERATING_REVENUE = ""
+        DIRECT_EXPENSE = ""
+        OVERHEAD_EXPENSE = ""
+        OTHER_EXPENSE = ""
+
+
+account_type_enum = cast(
+    "type[AccountType]",
+    StrEnum(
+        "AccountType", [(k, v["label"]) for k, v in config.accounts["types"].items()]
+    ),
 )
 
 

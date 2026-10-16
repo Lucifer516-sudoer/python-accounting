@@ -12,6 +12,7 @@ Represents the amount outstanding on a Transaction from a previous Reporting Per
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum, select
 from sqlalchemy.types import DECIMAL
@@ -32,25 +33,61 @@ from python_accounting.exceptions import (
 from python_accounting.mixins import IsolatingMixin, ClearingMixin
 from python_accounting.reports import IncomeStatement
 
+if TYPE_CHECKING:
+
+    class BalanceType(StrEnum):
+        """Stub mirroring the fixed BalanceType members for the type checkers.
+
+        The real BalanceType is created at import time, so the type checkers
+        cannot see its members. This class exists only for them;
+        tests/test_enum_stubs.py guards it against drifting from the real enum.
+        """
+
+        DEBIT = ""
+        CREDIT = ""
+
+    class BalanceTransactions(StrEnum):
+        """Stub mirroring the fixed BalanceTransactions members.
+
+        The real BalanceTransactions is created at import time, so the type
+        checkers cannot see its members. This class exists only for them;
+        tests/test_enum_stubs.py guards it against drifting from the real enum.
+        """
+
+        CLIENT_INVOICE = ""
+        SUPPLIER_BILL = ""
+        JOURNAL_ENTRY = ""
+
+
+balance_type_enum = cast(
+    "type[BalanceType]",
+    StrEnum("BalanceType", [("DEBIT", "Debit"), ("CREDIT", "Credit")]),
+)
+
+balance_transactions_enum = cast(
+    "type[BalanceTransactions]",
+    StrEnum(
+        "BalanceTransactions",
+        [
+            (t.name, t.value)
+            for t in [
+                Transaction.TransactionType.CLIENT_INVOICE,
+                Transaction.TransactionType.SUPPLIER_BILL,
+                Transaction.TransactionType.JOURNAL_ENTRY,
+            ]
+        ],
+    ),
+)
+
 
 class Balance(IsolatingMixin, ClearingMixin, Recyclable):
     """Represents a Balance brought down from previous Reporting Periods."""
 
     __tablename__ = "balance"
 
-    BalanceType = StrEnum("BalanceType", {"DEBIT": "Debit", "CREDIT": "Credit"})
+    BalanceType = balance_type_enum
     """(StrEnum): The double entry types of Balances."""
-    BalanceTransactions = StrEnum(
-        "BalanceTransactions",
-        {
-            t.name: t.value
-            for t in [
-                Transaction.TransactionType.CLIENT_INVOICE,
-                Transaction.TransactionType.SUPPLIER_BILL,
-                Transaction.TransactionType.JOURNAL_ENTRY,
-            ]
-        },
-    )
+    BalanceTransactions = balance_transactions_enum
     """(StrEnum): A list of Transaction Types that can have Balances."""
 
     __mapper_args__ = {"polymorphic_identity": "Balance"}

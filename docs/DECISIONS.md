@@ -277,6 +277,30 @@ Baselines this effort must drive to zero, measured 2026-10-16:
   (PLAN T9.1).
 - No doc-snippet execution in CI (SPEC §4).
 
+### D-015 — Config-driven enums are mirrored by TYPE_CHECKING stubs + a cast
+
+**Status:** accepted · **Date:** 2026-10-16
+
+- **Context:** `Account.AccountType`, `Transaction.TransactionType`,
+  `Balance.BalanceType` and `Balance.BalanceTransactions` are created at import time by
+  `StrEnum("Name", {...})` from `config.toml`. The type checkers saw only the
+  `strenum.StrEnum` factory result, so member access across the repo (~500 sites) was a
+  checker error (`reportAttributeAccessIssue` / `attr-defined`).
+- **Decision:** each enum gets (a) a `TYPE_CHECKING`-only stub class with the same
+  member names (placeholder values; never executed) and (b) a module-level
+  `cast("type[Stub]", StrEnum(...))` assigned to the former class attribute. Member
+  access, `.name`/`.value`, iteration, and subscripting (`account_type_enum["BANK"]`)
+  resolve in mypy strict and pyright standard with zero suppressions.
+- **Rejected:** per-site ignores (~500 sites); leaving the factory untyped. Probe
+  corrections that cost time and are now baked in: stub members must use a value
+  (pyright rejects `= ...`), the member list must be complete, and the factory gets a
+  list of `(name, value)` tuples (mypy wants `Sequence[Any]`; runtime accepts tuples).
+- **Guard:** `tests/test_enum_stubs.py` compares stub member names (read from source
+  via `ast`) with the runtime enum members in both directions — drift in either
+  direction fails the suite.
+- **Evidence:** landing commit moved mypy 414 → 339 and pyright 317 → 198; 122 tests
+  pass; runtime enum values and iteration unchanged (full suite + hash-chain tests).
+
 ---
 
 ## Probe index (scratch, `/tmp/opencode/`)

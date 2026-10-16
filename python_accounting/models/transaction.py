@@ -12,6 +12,7 @@ Represents a financial Transaction.
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import (
@@ -37,15 +38,43 @@ from python_accounting.exceptions import (
 )
 from python_accounting.models import Recyclable, Account, ReportingPeriod, LineItem
 
+if TYPE_CHECKING:
+
+    class TransactionType(StrEnum):
+        """Stub mirroring the config-driven TransactionType members.
+
+        The real TransactionType is created from config.toml at import time, so
+        the type checkers cannot see its members. This class exists only for
+        them; tests/test_enum_stubs.py guards it against drifting from the real
+        enum.
+        """
+
+        CASH_SALE = ""
+        CLIENT_INVOICE = ""
+        CREDIT_NOTE = ""
+        CLIENT_RECEIPT = ""
+        CASH_PURCHASE = ""
+        SUPPLIER_BILL = ""
+        DEBIT_NOTE = ""
+        SUPPLIER_PAYMENT = ""
+        CONTRA_ENTRY = ""
+        JOURNAL_ENTRY = ""
+
+
+transaction_type_enum = cast(
+    "type[TransactionType]",
+    StrEnum(
+        "TransactionType",
+        [(k, v["label"]) for k, v in config.transactions["types"].items()],
+    ),
+)
+
 
 class Transaction(IsolatingMixin, Recyclable):
     """Represents a Transaction in the sense of an original source document."""
 
     # Transaction types
-    TransactionType = StrEnum(
-        "TransactionType",
-        {k: v["label"] for k, v in config.transactions["types"].items()},
-    )
+    TransactionType = transaction_type_enum
     """(StrEnum): Transaction Types representing standard source document Transactions."""
 
     __table_args__ = (UniqueConstraint("transaction_no", "entity_id"),)
