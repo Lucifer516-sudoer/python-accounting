@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 """
-Verify that the built wheel keeps `config.toml` at its root.
+Verify the built wheel's layout invariants.
 
-This is not a cosmetic packaging check: `python_accounting/config.py` resolves the
-config as `<package>/../config.toml`, i.e. from the *root* of site-packages. If a
-build backend change ever moves config.toml inside the package, the library still
-imports fine from a source checkout and silently breaks for everyone who pip
-installs it. The source tree cannot catch that, so this does.
+1. `config.toml` must sit at the *root* of the wheel: `python_accounting/config.py`
+   resolves it as `<package>/../config.toml`, i.e. from the root of site-packages.
+   If a build backend change ever moves config.toml inside the package, the library
+   still imports fine from a source checkout and silently breaks for everyone who
+   pip installs it. The source tree cannot catch that, so this does.
+2. `python_accounting/py.typed` must ship: downstream type checkers rely on the
+   marker to pick up the library's inline types.
+3. `python_accounting/__init__.py` must not exist: the package is a namespace
+   package by design (removed in a859be1).
 
 Exits 0 if the layout is correct, 1 otherwise.
 """
@@ -53,6 +57,14 @@ def main() -> int:
         )
         return 1
 
+    if "python_accounting/py.typed" not in names:
+        print("python_accounting/py.typed is missing from the wheel.", file=sys.stderr)
+        print(
+            "Downstream type checkers rely on it to pick up the library's types.",
+            file=sys.stderr,
+        )
+        return 1
+
     if "python_accounting/__init__.py" in names:
         print(
             "python_accounting/__init__.py exists; the package is a namespace "
@@ -61,7 +73,7 @@ def main() -> int:
         )
         return 1
 
-    print(f"wheel layout OK: config.toml at root of {wheel.name}")
+    print(f"wheel layout OK: config.toml at root, py.typed shipped ({wheel.name})")
     return 0
 
 

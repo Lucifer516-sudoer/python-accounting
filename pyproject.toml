@@ -6,14 +6,15 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Edward Mungai", email = "emungai@microbooks.io" }]
-# Union of the former poetry spec `~3.9.0|~3.10.0|~3.11.0|~3.12.0|~3.13.0`.
-requires-python = ">=3.9,<3.14"
+# 2.0 drops 3.9 (locked decision Q2, docs/SPEC.md): the typing remodel targets
+# the 3.10+ syntax. The cap stays below 3.14 because the suite pins pytest 7.x,
+# which does not support 3.14.
+requires-python = ">=3.10,<3.14"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -44,7 +45,12 @@ postgres = ["psycopg2>=2.9.9,<3.0"]
 
 [dependency-groups]
 test = ["pytest>=7.4.3,<8.0"]
-lint = ["pre-commit>=4.0.0,<5.0", "ruff>=0.14.10,<0.15"]
+lint = [
+    "mypy>=2.4.0,<2.5",
+    "pre-commit>=4.0.0,<5.0",
+    "pyright>=1.1.414,<1.2",
+    "ruff>=0.14.10,<0.15",
+]
 docs = [
     "sphinx-autoapi>=3.0.0,<4.0",
     "sphinx-rtd-theme>=2.0.0,<3.0",
@@ -73,11 +79,30 @@ include = ["/python_accounting", "/config.toml", "/tests", "/README.md", "/LICEN
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+# mypy strict is the CI truth machine for types (SPEC A3/A4); pyright standard
+# (configured in pyrightconfig.json) is the editor-side gate. They are currently
+# reporting the baseline errors in docs/typing-baseline.md and become zero-error
+# gates in phase 8. `explicit_package_bases` is mandatory: python_accounting is
+# a namespace package with no top-level __init__.py, and plain `mypy --strict`
+# refuses to run without it.
+[tool.mypy]
+python_version = "3.10"
+strict = true
+explicit_package_bases = true
+
+# Tests are checked but not rewritten into fully-annotated code (SPEC §4);
+# check_untyped_defs keeps real checking active inside untyped bodies.
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+
 [tool.ruff]
 # Was 100 when the codebase was written to pylint's width; 88 is ruff's default
 # and is what the rest of the ecosystem formats to.
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 extend-exclude = ["docs/_build", "dist", ".venv"]
 
 [tool.ruff.format]

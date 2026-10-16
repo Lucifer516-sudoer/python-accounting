@@ -1,0 +1,7 @@
+{
+  "include": ["python_accounting", "tests", "scripts"],
+  "typeCheckingMode": "standard",
+  "pythonVersion": "3.10",
+  "venvPath": ".",
+  "venv": ".venv"
+}

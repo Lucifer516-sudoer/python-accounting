@@ -92,7 +92,8 @@ def test_bulk_assignment_stops_at_available_funds(
     assignments = _assignments(payment, session)
     expected_amounts = [Decimal(value) for value in expected]
     assert [(a.assigned_id, a.amount) for a in assignments] == [
-        (document.id, value) for document, value in zip(documents, expected_amounts)
+        (document.id, value)
+        for document, value in zip(documents, expected_amounts, strict=False)
     ]
     assert all(a.amount > 0 for a in assignments)
     assert all(a.transaction_id == payment.id for a in assignments)
@@ -101,7 +102,7 @@ def test_bulk_assignment_stops_at_available_funds(
     assert payment.balance(session) == balance_before - sum(expected_amounts)
     assert payment.balance(session) >= 0
     for document, cleared in zip(
-        documents, expected_amounts + [0] * (3 - len(expected))
+        documents, expected_amounts + [0] * (3 - len(expected)), strict=True
     ):
         assert document.cleared(session) == cleared
         assert document.cleared(session) <= document.amount
@@ -192,7 +193,7 @@ def test_exhaustion_preserves_future_target_reservations(
         )
     )
     future_date = datetime(fixed_today.year, 2, 15)
-    for document, reserved in zip(documents, ["100", "40"]):
+    for document, reserved in zip(documents, ["100", "40"], strict=False):
         reservation = post_document(ClientReceipt, account, bank, future_date, reserved)
         session.add(
             Assignment(
@@ -213,7 +214,8 @@ def test_exhaustion_preserves_future_target_reservations(
     assignments = _assignments(payment, session)
     expected_amounts = [Decimal(value) for value in expected]
     assert [(a.assigned_id, a.amount) for a in assignments] == [
-        (document.id, value) for document, value in zip(documents[1:], expected_amounts)
+        (document.id, value)
+        for document, value in zip(documents[1:], expected_amounts, strict=False)
     ]
     assert all(a.amount > 0 for a in assignments)
     assert payment.balance(session) == 0
