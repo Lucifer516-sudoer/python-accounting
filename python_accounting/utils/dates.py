@@ -1,4 +1,4 @@
-# utils/__init__.py
+# utils/dates.py
 # Copyright (C) 2024 - 2028 the PythonAccounting authors and contributors
 # <see AUTHORS file>
 #
@@ -11,16 +11,29 @@ Provides accounting specific date utilities.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
+
 from python_accounting.models.reporting_period import ReportingPeriod
 
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
 
-def get_dates(session, start_date: datetime = None, end_date: datetime = None) -> tuple:
+
+def get_dates(
+    session: "AccountingSession",
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> tuple[datetime, datetime, datetime, int]:
     """
     Returns the start, end and period start dates given the inputs provided.
 
     Args:
-        start_date (datetime): The start date.
-        end_date (datetime): The end date.
+        session (AccountingSession): The session used to resolve the reporting period.
+        start_date (datetime): The start date, defaulting to the period start date.
+        end_date (datetime): The end date, defaulting to today and normalized to the
+            last microsecond of the day.
+    Returns:
+        tuple: The start date, the end date, the period start date and the period id.
     """
     end_date = end_date or datetime.today()
     period = ReportingPeriod.get_period(
