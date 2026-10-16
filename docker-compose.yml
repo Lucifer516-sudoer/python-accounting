@@ -1,0 +1,70 @@
+# Verifies the optional database drivers, which the pytest suite (sqlite only)
+# never touches and which need system headers a bare checkout cannot assume.
+#
+#   cp .env.example .env   # optional; the same defaults apply without it
+#   docker compose up --build --abort-on-container-exit --exit-code-from drivers
+#
+# `smoke` installs the built wheel and runs the install smoke test; `drivers`
+# runs the same round-trip against both Postgres and MySQL. Credentials come
+# from the environment (see .env.example) with throwaway defaults.
+name: python-accounting
+
+services:
+  smoke:
+    build:
+      context: .
+      target: smoke
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-accounting}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-accounting}
+      POSTGRES_DB: ${POSTGRES_DB:-accounting}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-accounting} -d ${POSTGRES_DB:-accounting}",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mysql:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-accounting}
+      MYSQL_USER: ${MYSQL_USER:-accounting}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-accounting}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-uroot",
+          "-p${MYSQL_ROOT_PASSWORD:-root}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  drivers:
+    build:
+      context: .
+      target: drivers
+    environment:
+      SMOKE_URLS: >-
+        postgresql+psycopg2://${POSTGRES_USER:-accounting}:${POSTGRES_PASSWORD:-accounting}@postgres:5432/${POSTGRES_DB:-accounting}
+        mysql+mysqldb://${MYSQL_USER:-accounting}:${MYSQL_PASSWORD:-accounting}@mysql:3306/${MYSQL_DATABASE:-accounting}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy

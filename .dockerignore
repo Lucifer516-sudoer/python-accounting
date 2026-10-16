@@ -1,0 +1,17 @@
+# Keep the build context to the files the wheel build reads. Everything below
+# is either generated, git metadata, or only used outside the image.
+.git
+.github
+.venv
+dist
+build
+docs
+tests
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+*.egg-info
+.env
+.env.*
+*.log
