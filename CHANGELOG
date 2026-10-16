@@ -1,3 +1,21 @@
+## 1.1.0 - 2026-10-16
+
+- Migrate packaging, lockfile and CI from poetry to uv (PEP 621, hatchling).
+- Move the mysqlclient and psycopg2 drivers into optional `mysql` and `postgres`
+  extras, since both need system headers to build.
+- Replace pylint with ruff for formatting and linting; the 107 pylint
+  suppressions reduce to 2 targeted `noqa` comments.
+- Add pre-commit hooks mirroring the CI gate, and untrack `dist/` and
+  `docs/_build/` from git.
+- Fix: `configure_dates()` wrote the date formats into the hashing
+  configuration instead of the dates configuration.
+- Fix: `created_at`/`updated_at` defaulted to a timestamp frozen at import
+  time; they are now evaluated per insert.
+
+## 1.0.1 - 2024-03-26
+
+- Update the lock file for Python 3.13 and cap SqlAlchemy below 2.1.
+
 ## 1.0.0 - 2024-03-01
 
 - initial release

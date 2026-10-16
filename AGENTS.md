@@ -9,7 +9,7 @@ Nov 2023 – Mar 2024; only lightly maintained since. Sibling repo `python-profi
 uv sync --all-groups    # required; deps are NOT vendored
 uv run ruff format --check .   # CI gate, MUST pass
 uv run ruff check .            # CI gate, MUST pass
-uv run pytest                  # 109 tests, sqlite in-memory, no services needed
+uv run pytest                  # 115 tests, sqlite in-memory, no services needed
 ```
 
 - Toolchain is **uv** (not poetry). `uv sync` creates `.venv`; `uv run` auto-syncs it.
@@ -115,14 +115,8 @@ equivalent and were deleted outright.
 
 ## Known debt (verified, unfixed)
 
-- **`config.configure_dates()` writes to `self.hashing` instead of `self.dates`** (`config.py:134`),
-  silently corrupting the hashing config. Real bug, small fix.
-- **`models/base.py` uses `mapped_column(default=datetime.now())`** — evaluated once at import, so
-  `created_at`/`updated_at` are frozen at process start for the process lifetime. Should be a
-  callable (`default=datetime.now`).
 - **`docs/_build/` (267 files) and `dist/` (6 wheels/sdists) were tracked in git** and are now
   untracked + ignored. `dist/` and `docs/_build/` still exist on disk from before.
-- `CHANGELOG` stops at 1.0.0 while `pyproject.toml` is at 1.0.1.
 - `.github/workflows/publish.yml` still uses `PYPI_API_TOKEN` rather than trusted publishing;
   the contradictory `id-token: write` permission was removed and the upgrade path is commented.
 - `pyproject.toml` excludes Python 3.14 (`requires-python = ">=3.9,<3.14"`); SQLAlchemy is capped
