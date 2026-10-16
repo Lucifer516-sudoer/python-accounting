@@ -9,6 +9,9 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  # Manual trigger, so CI can be re-run without pushing a commit, and so the
+  # workflow can be exercised immediately after enabling Actions on a fork.
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
