@@ -785,6 +785,7 @@ dev = [
     { name = "pyright" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "types-toml" },
 ]
 docs = [
     { name = "myst-parser" },
@@ -798,6 +799,7 @@ lint = [
     { name = "pre-commit", version = "4.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyright" },
     { name = "ruff" },
+    { name = "types-toml" },
 ]
 test = [
     { name = "pytest" },
@@ -822,6 +824,7 @@ dev = [
     { name = "pyright", specifier = ">=1.1.414,<1.2" },
     { name = "pytest", specifier = ">=7.4.3,<8.0" },
     { name = "ruff", specifier = ">=0.14.10,<0.15" },
+    { name = "types-toml", specifier = ">=0.10.8.20260518" },
 ]
 docs = [
     { name = "myst-parser", specifier = ">=2.0.0,<3.0" },
@@ -834,6 +837,7 @@ lint = [
     { name = "pre-commit", specifier = ">=4.0.0,<5.0" },
     { name = "pyright", specifier = ">=1.1.414,<1.2" },
     { name = "ruff", specifier = ">=0.14.10,<0.15" },
+    { name = "types-toml", specifier = ">=0.10.8.20260518" },
 ]
 test = [{ name = "pytest", specifier = ">=7.4.3,<8.0" }]
 
@@ -1183,6 +1187,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/98/d52024bb5b0ff68b4f0d276d867f634c84a67319a7e9f6b7708a37742333/tomli-2.5.0-cp313-cp313-win_amd64.whl", hash = "sha256:fd4dc129784e0c5335bd4e61dfcc4487499a013419e655cf2da1d091b7e0efdc", size = 113301, upload-time = "2026-10-07T12:22:47.647Z" },
     { url = "https://files.pythonhosted.org/packages/6f/f2/540db3a70572a8c23a28aba3e9c358ce0ffffbafc990905c1343aa265b31/tomli-2.5.0-cp313-cp313-win_arm64.whl", hash = "sha256:69491c143d2fe063046e0301e62a810bed338fa4d1ce0fd870c27dc1e09b0d84", size = 109744, upload-time = "2026-10-07T12:22:48.925Z" },
     { url = "https://files.pythonhosted.org/packages/60/3f/3e3f8fd0919249b0200c80fbc4f9a1e70be19f9883da71dfb7f8b9ab8aca/tomli-2.5.0-py3-none-any.whl", hash = "sha256:32a7b79ac57a2e83670ce329ccf675798bc5a2094783a63676866b70503f2e2b", size = 14765, upload-time = "2026-10-07T12:23:36.875Z" },
+]
+
+[[package]]
+name = "types-toml"
+version = "0.10.8.20260518"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/11/6ece999e91f2ccb848ab4420f3f4816e78ac0541f739e6864affdaaa5737/types_toml-0.10.8.20260518.tar.gz", hash = "sha256:80e10facd24fdeda9d5c672187d72be3ac284843788d67f5aae59e3e016db6fe", size = 9419, upload-time = "2026-05-18T06:02:16.719Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/25/489751806bf5c95e4007f8e17409199c54d31e49ffbea07c5729b1286c8e/types_toml-0.10.8.20260518-py3-none-any.whl", hash = "sha256:0e564ab05f6fde62a315b3b5a9b6624fda569399795d30a37e64705a70459303", size = 9669, upload-time = "2026-05-18T06:02:15.86Z" },
 ]
 
 [[package]]

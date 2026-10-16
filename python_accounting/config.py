@@ -16,6 +16,8 @@ the class with a custom config.tml file.
 
 import os
 import pathlib
+from typing import Any
+
 import toml
 
 
@@ -24,7 +26,7 @@ class Config:
     Python Accounting configuration class.
     """
 
-    database: dict
+    database: dict[str, Any]
     """
     The database configuration.
     ::
@@ -39,7 +41,7 @@ class Config:
             Defaults to false.
         }
     """
-    hashing: dict
+    hashing: dict[str, Any]
     """
     Configuration for hashing Ledger records to guard against direct database tampering.
     ::
@@ -48,7 +50,7 @@ class Config:
             algorithm (str): The Algorithm to use for encoding the hashes. Defaults to 'sha256'.
         }
     """
-    dates: dict
+    dates: dict[str, Any]
     """
     Configuration for formatting dates in reports.
     ::
@@ -57,7 +59,7 @@ class Config:
             long (str): The format for long dates. Defaults to '%d, %b %Y'.
         }
     """
-    accounts: dict
+    accounts: dict[str, Any]
     """
     Account Types, Codes and Financial Report section membership Configuration
     ::
@@ -69,7 +71,7 @@ class Config:
             purchasables (list): Account types that can be used in purchasing Transations.
         }
     """
-    transactions: dict
+    transactions: dict[str, Any]
     """
     Transaction Types, Number Prefixes and clearable/assignable Configuration
     ::
@@ -83,7 +85,7 @@ class Config:
             to them) clearable Transactions.
         }
     """
-    reports: dict
+    reports: dict[str, Any]
     """
     Configuration for Financial Reports.
     ::
@@ -96,14 +98,18 @@ class Config:
         }
     """
 
-    def __init__(self, config_file) -> None:
+    def __init__(self, config_file: str) -> None:
         with open(config_file, encoding="UTF-8") as f:
             configuration = toml.load(f)
             for k, v in configuration.items():
                 setattr(self, k, v)
 
     def configure_database(
-        self, url, echo=False, include_deleted=False, ignore_isolation=False
+        self,
+        url: str,
+        echo: bool = False,
+        include_deleted: bool = False,
+        ignore_isolation: bool = False,
     ) -> None:
         """
         Configures the database.
@@ -119,7 +125,9 @@ class Config:
         self.database["include_deleted"] = include_deleted
         self.database["ignore_isolation"] = ignore_isolation
 
-    def configure_hashing(self, salt="hashing salt", algorithm="sha256") -> None:
+    def configure_hashing(
+        self, salt: str = "hashing salt", algorithm: str = "sha256"
+    ) -> None:
         """
         Configures hashing.
 
@@ -130,7 +138,7 @@ class Config:
         self.hashing["salt"] = salt
         self.hashing["algorithm"] = algorithm
 
-    def configure_dates(self, short="%Y-%m-%d", long="%d, %b %Y") -> None:
+    def configure_dates(self, short: str = "%Y-%m-%d", long: str = "%d, %b %Y") -> None:
         """
         Configures dates.
 
