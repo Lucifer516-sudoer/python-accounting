@@ -462,6 +462,57 @@ Ending Cash Balance                   30.0000
 Cashbook Balance                      30.0000
                               ===============
 ```
+## Development
+
+The toolchain is [uv](https://docs.astral.sh/uv/); Python 3.9 - 3.13 are supported.
+
+```bash
+uv sync --all-groups    # create .venv with every dependency group
+uv run ruff format .    # format (CI runs the check-only form)
+uv run ruff check .     # lint
+uv run pytest           # 115 tests, in-memory sqlite, no services needed
+```
+
+`uv run pre-commit install` wires the same gate (format, lint, tests, lock file and wheel
+layout checks) into every commit.
+
+### Verifying the installed wheel
+
+`config.toml` is resolved from the root of `site-packages`, so the library can import fine
+from a checkout and still be broken for everyone who `pip install`s a wheel. Two scripts
+guard against that:
+
+```bash
+uv run python scripts/check_wheel_layout.py   # asserts config.toml is at the wheel root
+
+uv build --wheel
+uv venv /tmp/smoke
+uv pip install --python /tmp/smoke/bin/python dist/*.whl
+/tmp/smoke/bin/python scripts/smoke_install.py   # refuses to run on a source checkout
+```
+
+### Docker
+
+The image is not a service: it installs the wheel into a clean interpreter and runs the
+smoke test as a non-root user. Compose adds Postgres and MySQL and runs the same round-trip
+against both - the only coverage the optional database drivers get, since the test suite
+is sqlite only.
+
+```bash
+docker build --target smoke -t python-accounting-smoke .
+docker run --rm python-accounting-smoke
+
+cp .env.example .env   # optional; compose falls back to the same defaults
+docker compose up --build --abort-on-container-exit --exit-code-from drivers
+```
+
+## Releasing
+
+`pyproject.toml` is the single source of the version; keep it and the changelog in sync,
+then run the gate above. Publishing happens on GitHub: create a release (tag e.g.
+`v1.1.0`) and `.github/workflows/publish.yml` builds and uploads the distributions to
+PyPI using the `PYPI_API_TOKEN` secret.
+
 ## Supported Databases (Fully tested)
 
 - MySql/MariaDb

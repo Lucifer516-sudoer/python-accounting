@@ -103,7 +103,26 @@ equivalent and were deleted outright.
   hardcoded years.
 - Tests use in-memory sqlite. The MySQL/Postgres drivers are **optional extras**
   (`pip install python-accounting[mysql]` / `[postgres]`) because both need system headers
-  (libmysqlclient / libpq) to build. **Neither path is exercised by any test or CI job.**
+  (libmysqlclient / libpq) to build. **pytest never touches them**; the CI `docker` job and
+  `docker compose up --build --abort-on-container-exit --exit-code-from drivers` are the
+  only coverage the driver paths get.
+
+## Ship artifacts (wheel smoke, Docker)
+
+- The gate proves the *source tree* works; only a container or a clean venv proves the
+  *wheel* does. `scripts/smoke_install.py` refuses to run against a checkout (it looks for
+  `pyproject.toml`/`.git` next to the package directory) — do not weaken that guard, it is
+  the whole point. It also exercises the `config.toml`-from-site-packages resolution a
+  checkout cannot.
+- `Dockerfile` stages: `builder` (wheel) → `smoke` (default target; installs the wheel as
+  UID 10001 and runs the smoke test) → `drivers` (adds the mysql/postgres extras).
+  `.dockerignore` keeps the context to what the build reads; a new file the wheel needs must
+  be allowed there or the container build breaks while local builds stay green.
+- `docker-compose.yml` + `.env.example`: Postgres and MySQL plus the `drivers` runner.
+  Compose interpolates `${VAR:-default}`; never hardcode credentials in the compose file.
+- CI: `wheel-smoke` installs the built wheel into a clean venv on 3.12 only (the build job
+  covers 3.9–3.13 from source); `docker` builds the image, asserts it is non-root, and runs
+  the compose flow.
 
 ## Conventions
 
