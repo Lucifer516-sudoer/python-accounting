@@ -11,6 +11,7 @@ Represents a Tax that is applied to the Line Item of a Transaction.
 """
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, func
 from sqlalchemy.types import DECIMAL
@@ -22,6 +23,9 @@ from python_accounting.exceptions import (
     InvalidTaxAccountError,
     HangingTransactionsError,
 )
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
 
 
 class Tax(IsolatingMixin, Recyclable):
@@ -39,7 +43,9 @@ class Tax(IsolatingMixin, Recyclable):
     """(str): A shorthand representation of the Tax."""
     rate: Mapped[Decimal] = mapped_column(DECIMAL(precision=13, scale=4))
     """(Decimal): The percentage rate of the Tax."""
-    account_id: Mapped[int] = mapped_column(ForeignKey("account.id"), nullable=True)
+    account_id: Mapped[int | None] = mapped_column(
+        ForeignKey("account.id"), nullable=True
+    )
     """(int): The id of the Account model to which Tax amounts are posted."""
 
     # relationships
@@ -49,7 +55,7 @@ class Tax(IsolatingMixin, Recyclable):
     def __repr__(self) -> str:
         return f"{self.name} <{self.code}>: {self.rate}"
 
-    def validate(self, session) -> None:
+    def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Tax properties.
 
@@ -73,13 +79,12 @@ class Tax(IsolatingMixin, Recyclable):
         if self.rate > 0 and self.account_id is None:
             raise MissingTaxAccountError
 
-        if (
-            session.get(Account, self.account_id).account_type
-            != Account.AccountType.CONTROL
-        ):
+        account = session.get(Account, self.account_id)
+        assert account is not None
+        if account.account_type != Account.AccountType.CONTROL:
             raise InvalidTaxAccountError
 
-    def validate_delete(self, session) -> None:
+    def validate_delete(self, session: "AccountingSession") -> None:
         """
         Validates if the Tax can be deleted.
 
