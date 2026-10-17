@@ -3,6 +3,45 @@
 Double-entry accounting **library** (PyPI: `python-accounting`), not an app. Core written
 Nov 2023 – Mar 2024; only lightly maintained since. Sibling repo `python-profit` may consume it.
 
+## 2.0 remodel status (updated 2026-10-17, end of day)
+
+The contract is `docs/SPEC.md` (acceptance A1–A11) + `docs/DECISIONS.md` (D-001…D-015)
++ `docs/PLAN.md` (T0–T9). Read all three before touching anything.
+
+**One agent session at a time on this repo.** On 2026-10-17 two sessions raced on the
+same working tree: one committed under the other and edited files mid-verification.
+Before starting work, confirm no other session is live; before committing, re-check
+`git status` and `git log -1`.
+
+Progress: T0–T2 done; T3.0–T3.9 done (base, recyclable, recycled, currency, user,
+account, category, tax, reporting_period, transaction, ledger `91ece95`, line_item
+`20922c7`). Remaining in T3: **balance → assignment → entity**, one commit each.
+Current totals to beat: **mypy 234 / pyright 161 / pytest 122 / ruff format 90 files
+clean**. Per-file DoD: 0 errors in both checkers; totals strictly decrease.
+
+Hard-won lessons baked into the code (do not undo):
+
+- `line_item.__init__` keeps `quantity = 1` (int) with a documented
+  `# type: ignore[assignment]`. A Decimal quantity turns `amount` into Decimal and
+  `Decimal / float` raises in `Ledger._post_simple`, because tests set `Tax.rate`
+  as a float pre-flush. The DECIMAL column coerces on flush. The earlier
+  `cast(Decimal, 1)` was a type lie — replaced by the explicit ignore (A11 form).
+- Config-driven enums (D-015): TYPE_CHECKING stub class + module-level
+  `cast("type[Stub]", StrEnum(...))` + `ClassVar["type[StubAlias]"]` class attr +
+  in-block `StubAlias: TypeAlias = Stub`. The ClassVar annotation is required for
+  mypy's fixpoint in mid-import-cycle modules. See `models/account.py` /
+  `models/balance.py` for the canonical pattern.
+- All quoted annotations (`Mapped["X"]`, `"tuple[Ledger, Ledger]"`) must be QUOTED —
+  annotations evaluate at class-definition time and there is no
+  `from __future__ import annotations` in this repo.
+- zsh eats backticks in `git commit -m` messages (command substitution). Use single
+  quotes or a heredoc.
+
+Next up after T3: T4.1 six mixins (isolating `foreign_keys` string-form probe first,
+D-007), T4.2 session layer (**user checkpoint pending: `delete -> None`**, D-009),
+T4.3 dead-code removal, T4.4b `contribution()` test-first fix (D-010 — the precedence
+bug is deliberately still present, wrapped in `Decimal(...)` with a NOTE comment).
+
 ## Setup — this will bite you
 
 ```bash
