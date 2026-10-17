@@ -12,7 +12,7 @@ Represents a financial Transaction.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import (
@@ -39,6 +39,11 @@ from python_accounting.exceptions import (
 from python_accounting.models import Recyclable, Account, ReportingPeriod, LineItem
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.currency import Currency
+    from python_accounting.models.ledger import Ledger
 
     class TransactionType(StrEnum):
         """Stub mirroring the config-driven TransactionType members.
@@ -60,8 +65,14 @@ if TYPE_CHECKING:
         CONTRA_ENTRY = ""
         JOURNAL_ENTRY = ""
 
+    # Alias for use inside the Transaction class body, where the
+    # Transaction.TransactionType class attribute shadows the module-level stub.
+    # Explicit TypeAlias so that pyright accepts it in type expressions
+    # (e.g. ``type[TransactionTypeStub]``).
+    TransactionTypeStub: TypeAlias = TransactionType
 
-transaction_type_enum = cast(
+
+transaction_type_enum: "type[TransactionType]" = cast(
     "type[TransactionType]",
     StrEnum(
         "TransactionType",
@@ -82,6 +93,8 @@ class Transaction(IsolatingMixin, Recyclable):
     __mapper_args__ = {
         "polymorphic_identity": "Transaction",
     }
+    # Allow the bare (non-Mapped) dynamic-attribute annotations below (D-011)
+    __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)
     """(int): The primary key of the Transaction database record."""
@@ -133,8 +146,26 @@ class Transaction(IsolatingMixin, Recyclable):
     )
     """(list): The Ledger models associated with the Transaction."""
 
+    # Attributes set dynamically during account statement generation (D-011)
+    debit: Decimal
+    """(Decimal): The debit amount of the Transaction in an Account statement."""
+
+    credit: Decimal
+    """(Decimal): The credit amount of the Transaction in an Account statement."""
+
+    cleared_amount: Decimal
+    """(Decimal): The amount of the Transaction that has been cleared."""
+
+    uncleared_amount: Decimal
+    """(Decimal): The amount of the Transaction that is still outstanding."""
+
+    age: int
+    """(int): The age of the Transaction in days in an Aging Schedule."""
+
     @validates("line_items", include_removes=True)
-    def validate_line_items(self, _, line_item, is_remove):
+    def validate_line_items(
+        self, _: str, line_item: "LineItem", is_remove: bool
+    ) -> "LineItem":
         """
         Validates adding or removing of Transaction Line Items.
 
@@ -142,8 +173,9 @@ class Transaction(IsolatingMixin, Recyclable):
             PostedTransactionError: If the Transaction is posted and Line Items are added or removed from it.
             ValueError: If the unsaved Line Item are added or removed from the Transaction.
         """
-        if hasattr(self, "_validate_subclass_line_items"):
-            self._validate_subclass_line_items(line_item)
+        subclass_validate = getattr(self, "_validate_subclass_line_items", None)
+        if subclass_validate:
+            subclass_validate(line_item)
 
         if self.is_posted:
             raise PostedTransactionError(
@@ -160,7 +192,7 @@ class Transaction(IsolatingMixin, Recyclable):
         return line_item
 
     @validates("ledgers", include_removes=True)
-    def validate_ledgers(self, key, ledger, is_remove):
+    def validate_ledgers(self, key: str, ledger: "Ledger", is_remove: bool) -> None:
         """
         Validates adding or removing of Transaction Ledgers
 
@@ -172,20 +204,20 @@ class Transaction(IsolatingMixin, Recyclable):
         )
 
     @property
-    def tax(self) -> dict:
+    def tax(self) -> dict[str, Any]:
         """
         The taxes that have been applied to the transaction.
             - taxes (dict): The taxes applied to the Transaction and their amounts.
             - amount (str): The total tax applied to the Transaction.
         """
-        taxes = {}
-        total = 0
+        taxes: dict[str, Any] = {}
+        total: Decimal = Decimal(0)
         for line_item in iter(self.line_items):
             if line_item.tax_id:
                 amount = (
                     line_item.tax.rate * line_item.amount * line_item.quantity / 100
                 )
-                total += amount
+                total += Decimal(amount)
                 if line_item.tax.code in taxes:
                     taxes[line_item.tax.code]["amount"] += amount
                 else:
@@ -209,27 +241,34 @@ class Transaction(IsolatingMixin, Recyclable):
     def amount(self) -> Decimal:
         """The amount of the Transaction."""
 
-        return sum(
-            line_item.amount * line_item.quantity
-            + (
-                (line_item.amount * line_item.quantity * line_item.tax.rate / 100)
-                if line_item.tax_id and not line_item.tax_inclusive
-                else 0
+        return Decimal(
+            sum(
+                line_item.amount * line_item.quantity
+                + (
+                    (line_item.amount * line_item.quantity * line_item.tax.rate / 100)
+                    if line_item.tax_id and not line_item.tax_inclusive
+                    else 0
+                )
+                for line_item in iter(self.line_items)
+                if line_item.credited != self.credited
             )
-            for line_item in iter(self.line_items)
-            if line_item.credited != self.credited
         )
 
     def __repr__(self) -> str:
         return f"{self.account} <{self.transaction_no}>: {self.amount}"
 
-    def _get_main_account(self, session) -> Account:
+    def _get_main_account(self, session: "AccountingSession") -> Account:
         account = session.get(Account, self.account_id)
         if not account:
             raise ValueError("The main Account is required")
         return account
 
-    def _transaction_no(self, session, transaction_type, reporting_period) -> str:
+    def _transaction_no(
+        self,
+        session: "AccountingSession",
+        transaction_type: StrEnum,
+        reporting_period: "ReportingPeriod",
+    ) -> str:
         next_id = (
             session.query(Transaction)
             .filter(Transaction.transaction_type == transaction_type)
@@ -245,14 +284,14 @@ class Transaction(IsolatingMixin, Recyclable):
         ]
         return f"{prefix}{reporting_period.period_count:02}/{next_id:04}"
 
-    def is_secure(self, session) -> bool:
+    def is_secure(self, session: "AccountingSession") -> bool:
         """Verify that the Transaction's Ledgers have not been tampered with."""
         return all(
             ledger.hash == ledger.get_hash(session.connection())
             for ledger in self.ledgers
         )
 
-    def post(self, session) -> None:
+    def post(self, session: "AccountingSession") -> None:
         """
         Posts the Transaction to the Ledger.
 
@@ -276,7 +315,7 @@ class Transaction(IsolatingMixin, Recyclable):
         session.flush()
         Ledger.post(session, self)
 
-    def contribution(self, session, account: Account) -> Decimal:
+    def contribution(self, session: "AccountingSession", account: Account) -> Decimal:
         """
         Gets the amount contributed by the account to the transaction total.
 
@@ -300,14 +339,16 @@ class Transaction(IsolatingMixin, Recyclable):
             .filter(Ledger.currency_id == self.currency_id)
             .filter(Ledger.post_account_id == account.id)
         )
-        return (
+        # NOTE: the Decimal() wrapper is type-checker-only; the precedence
+        # defect inside this expression is repaired test-first in T4.4b (D-010).
+        return Decimal(
             query.filter(Ledger.entry_type == Balance.BalanceType.DEBIT).scalar()
             or 0
             - query.filter(Ledger.entry_type == Balance.BalanceType.CREDIT).scalar()
             or 0
         )
 
-    def validate(self, session) -> None:
+    def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Transaction properties.
 
@@ -368,7 +409,7 @@ class Transaction(IsolatingMixin, Recyclable):
             if line_item.account_id == self.account_id:
                 raise RedundantTransactionError(line_item)
 
-    def validate_delete(self, _) -> None:
+    def validate_delete(self, session: "AccountingSession") -> None:
         """
         Validates if the Transaction can be deleted.
 
