@@ -12,7 +12,7 @@ Represents an Account, the basic unit of accounting that groups the transactions
 import warnings
 from decimal import Decimal
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, aliased
 from sqlalchemy import String, ForeignKey, Enum, func, inspect, select, or_, exc
@@ -28,6 +28,9 @@ from python_accounting.exceptions import (
 from python_accounting.utils.dates import get_dates
 
 if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.category import Category
+    from python_accounting.models.currency import Currency
 
     class AccountType(StrEnum):
         """Stub mirroring the config-driven AccountType members.
@@ -55,6 +58,10 @@ if TYPE_CHECKING:
         DIRECT_EXPENSE = ""
         OVERHEAD_EXPENSE = ""
         OTHER_EXPENSE = ""
+
+    # Alias for use inside the Account class body, where the Account.AccountType
+    # class attribute shadows the module-level stub.
+    AccountTypeStub = AccountType
 
 
 account_type_enum = cast(
@@ -84,6 +91,8 @@ class Account(IsolatingMixin, Recyclable):
     """
 
     __mapper_args__ = {"polymorphic_identity": "Account"}
+    # Allow the bare (non-Mapped) dynamic-attribute annotations below (D-011)
+    __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)
     """(int): The primary key of the Account database record."""
@@ -103,29 +112,38 @@ class Account(IsolatingMixin, Recyclable):
     # relationships
     currency: Mapped["Currency"] = relationship(foreign_keys=[currency_id])
     """(Currency): The Currency associated with the Account."""
-    category: Mapped["Category"] = relationship(foreign_keys=[category_id])
+    category: Mapped["Category | None"] = relationship(foreign_keys=[category_id])
     """(`Category`, optional): The Category to which the Account belongs."""
 
-    def _get_account_code(self, session) -> int:
-        current_count = (
+    # Attributes set dynamically during statement/report generation (D-011)
+    opening: Decimal
+    """(Decimal): The opening balance set by Account.section_balances."""
+    closing: Decimal
+    """(Decimal): The closing balance set by Account.section_balances."""
+    movement: Decimal
+    """(Decimal): The period movement set by Account.section_balances."""
+
+    def _get_account_code(self, session: "AccountingSession") -> int:
+        current_count = int(
             session.query(Account)
             .filter(Account.entity_id == self.entity_id)
             .filter(Account.account_type == self.account_type)
             .with_entities(func.count())
             .scalar()
+            or 0
         )
 
         return (
             int(config.accounts["types"][self.account_type.name]["account_code"])
             + current_count
-            + getattr(self, "session_index", 1)
+            + int(getattr(self, "session_index", 1))
         )
 
     def __repr__(self) -> str:
         return f"{self.account_type} {self.name} <{self.account_code}>"
 
     def balance_movement(
-        self, session, start_date: datetime, end_date: datetime
+        self, session: "AccountingSession", start_date: datetime, end_date: datetime
     ) -> Decimal:
         """
         Get the change in the account balance between the given dates.
@@ -156,20 +174,22 @@ class Account(IsolatingMixin, Recyclable):
             .filter(Ledger.post_account_id == self.id)
             .filter(Ledger.entity_id == self.entity_id)
         )
-        return (
+        debit = (
             query.filter(Ledger.entry_type == Balance.BalanceType.DEBIT).scalar() or 0
-        ) - (
+        )
+        credit = (
             query.filter(Ledger.entry_type == Balance.BalanceType.CREDIT).scalar() or 0
         )
+        return Decimal(debit) - Decimal(credit)
 
     @staticmethod
     def section_balances(
-        session,
-        account_types: list,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        session: "AccountingSession",
+        account_types: "list[AccountTypeStub]",
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         full_balance: bool = True,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Gets the opening, movement and closing balances of the accounts of the given section
         (account types), organized by category.
@@ -192,7 +212,12 @@ class Account(IsolatingMixin, Recyclable):
                 - closing (Decimal): The sum of opening closing of Accounts in the section.
                 - categories (dict): The Accounts belonging to the section separated by Category.
         """
-        balances = {"opening": 0, "movement": 0, "closing": 0, "categories": {}}
+        balances: dict[str, Any] = {
+            "opening": 0,
+            "movement": 0,
+            "closing": 0,
+            "categories": {},
+        }
         start_date, end_date, period_start, _ = get_dates(session, start_date, end_date)
 
         for account in session.scalars(
@@ -228,7 +253,9 @@ class Account(IsolatingMixin, Recyclable):
                 balances["closing"] += account.closing
         return balances
 
-    def opening_balance(self, session, year: int = None) -> Decimal:
+    def opening_balance(
+        self, session: "AccountingSession", year: int | None = None
+    ) -> Decimal:
         """
         Gets the the opening balance for the account for the given year.
 
@@ -258,15 +285,19 @@ class Account(IsolatingMixin, Recyclable):
             .filter(Balance.account_id == self.id)
             .filter(Balance.entity_id == self.entity_id)
         )
-        return (
+        debit = (
             query.filter(Balance.balance_type == Balance.BalanceType.DEBIT).scalar()
             or 0
-        ) - (
+        )
+        credit = (
             query.filter(Balance.balance_type == Balance.BalanceType.CREDIT).scalar()
             or 0
         )
+        return Decimal(debit) - Decimal(credit)
 
-    def closing_balance(self, session, end_date: datetime = None) -> Decimal:
+    def closing_balance(
+        self, session: "AccountingSession", end_date: datetime | None = None
+    ) -> Decimal:
         """
         Gets the the closing balance of the Account as at the given date.
 
@@ -288,11 +319,11 @@ class Account(IsolatingMixin, Recyclable):
 
     def statement(
         self,
-        session,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        session: "AccountingSession",
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         schedule: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """
         Gets a chronological listing of the Transactions posted to the Account between
             the dates given.
@@ -341,7 +372,7 @@ class Account(IsolatingMixin, Recyclable):
             )
         start_date, end_date, _, period_id = get_dates(session, start_date, end_date)
 
-        statement = (
+        statement: dict[str, Any] = (
             {
                 "transactions": [],
                 "total_amount": 0,
@@ -355,7 +386,8 @@ class Account(IsolatingMixin, Recyclable):
                 "closing_balance": 0,
             }
         )
-        balances = []
+        balances: list[Any] = []
+        balance: Decimal = Decimal(0)
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -387,6 +419,7 @@ class Account(IsolatingMixin, Recyclable):
                     .filter(Balance.reporting_period_id == period_id)
                     .filter(Balance.entity_id == self.entity_id)
                     .order_by(Balance.transaction_date)
+                    .all()
                 )
             else:
                 transactions = transactions.filter(
@@ -442,7 +475,7 @@ class Account(IsolatingMixin, Recyclable):
 
         return statement
 
-    def validate(self, session) -> None:
+    def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Account properties.
 
@@ -469,12 +502,13 @@ class Account(IsolatingMixin, Recyclable):
 
         if self.category_id:
             category = session.get(Category, self.category_id)
+            assert category is not None
             if self.account_type != category.category_account_type:
                 raise InvalidCategoryAccountTypeError(
                     self.account_type.value, category.category_account_type.value
                 )
 
-    def validate_delete(self, session) -> None:
+    def validate_delete(self, session: "AccountingSession") -> None:
         """
         Validates if the account can be deleted.
 

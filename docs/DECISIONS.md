@@ -238,6 +238,12 @@ Baselines this effort must drive to zero, measured 2026-10-16:
   (`cleared_amount: Decimal`). Setter semantics and pre-set `AttributeError` behavior are
   unchanged. Rejected: properties (changes semantics), real columns (schema change),
   `ClassVar` (wrong meaning).
+- **Implementation note (2026-10-17, landed with the account pass):** on a declarative
+  class, a bare (non-`Mapped`) annotation makes SQLAlchemy's Annotated Declarative Table
+  form raise `MappedAnnotationError` at mapper configuration time. Every mapped class
+  carrying dynamic-attribute annotations must therefore declare
+  `__allow_unmapped__ = True` (e.g. `class Account`). Caught by the full pytest run —
+  mapper configuration is exercised there, so a missing marker fails loudly, never silently.
 
 ### D-012 — Gate sequencing: annotations first, then ruff `ANN/TC/RUF/PERF`, hooks last
 
