@@ -233,7 +233,7 @@ class Ledger(IsolatingMixin, Recyclable):
         else:
             Ledger._post_simple(session, transaction)
 
-    def get_hash(self, connection) -> None:
+    def get_hash(self, connection) -> str:
         """
         Calculate the hash of the Ledger.
 
@@ -242,7 +242,7 @@ class Ledger(IsolatingMixin, Recyclable):
             to which the Ledger belongs.
 
         Returns:
-            None
+            str: The hash of the Ledger.
         """
         last = connection.execute(
             select(Ledger).where(Ledger.id == self.id - 1)
