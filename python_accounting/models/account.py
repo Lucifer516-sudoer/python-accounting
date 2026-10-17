@@ -12,7 +12,7 @@ Represents an Account, the basic unit of accounting that groups the transactions
 import warnings
 from decimal import Decimal
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, aliased
 from sqlalchemy import String, ForeignKey, Enum, func, inspect, select, or_, exc
@@ -28,6 +28,8 @@ from python_accounting.exceptions import (
 from python_accounting.utils.dates import get_dates
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     from python_accounting.database.session import AccountingSession
     from python_accounting.models.category import Category
     from python_accounting.models.currency import Currency
@@ -60,11 +62,12 @@ if TYPE_CHECKING:
         OTHER_EXPENSE = ""
 
     # Alias for use inside the Account class body, where the Account.AccountType
-    # class attribute shadows the module-level stub.
-    AccountTypeStub = AccountType
+    # class attribute shadows the module-level stub. Explicit TypeAlias so that
+    # pyright accepts it in type expressions (e.g. ``type[AccountTypeStub]``).
+    AccountTypeStub: TypeAlias = AccountType
 
 
-account_type_enum = cast(
+account_type_enum: "type[AccountType]" = cast(
     "type[AccountType]",
     StrEnum(
         "AccountType", [(k, v["label"]) for k, v in config.accounts["types"].items()]
@@ -78,7 +81,7 @@ class Account(IsolatingMixin, Recyclable):
     __tablename__ = "account"
 
     # Chart of Accounts types
-    AccountType = account_type_enum
+    AccountType: ClassVar["type[AccountTypeStub]"] = account_type_enum
     """(StrEnum): Account Types as defined by IFRS and GAAP."""
 
     # Account Types that can be used in Purchasing Transactions
@@ -122,6 +125,8 @@ class Account(IsolatingMixin, Recyclable):
     """(Decimal): The closing balance set by Account.section_balances."""
     movement: Decimal
     """(Decimal): The period movement set by Account.section_balances."""
+    balance: Decimal
+    """(Decimal): The balance of the Account set by Category.account_balances."""
 
     def _get_account_code(self, session: "AccountingSession") -> int:
         current_count = int(

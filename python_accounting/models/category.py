@@ -6,11 +6,12 @@
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
 """
-Represents the Base class for accounting models.
+Represents a Category, a grouping of Accounts of the same type.
 
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum
@@ -18,6 +19,9 @@ from python_accounting.mixins import IsolatingMixin
 from python_accounting.models import Recyclable, Account
 from python_accounting.exceptions import InvalidAccountTypeError
 from python_accounting.utils.dates import get_dates
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
 
 
 class Category(IsolatingMixin, Recyclable):
@@ -43,7 +47,7 @@ class Category(IsolatingMixin, Recyclable):
     def __repr__(self) -> str:
         return f"{self.name} <{self.category_account_type}>"
 
-    def validate(self, _) -> None:
+    def validate(self, _: "AccountingSession") -> None:
         """
         Validates the Category properties.
 
@@ -62,7 +66,9 @@ class Category(IsolatingMixin, Recyclable):
                 f"category_account_type must be one of: {', '.join(list(Account.AccountType))}.",
             )
 
-    def account_balances(self, session, end_date: datetime = None) -> dict:
+    def account_balances(
+        self, session: "AccountingSession", end_date: datetime | None = None
+    ) -> dict[str, Any]:
         """
         Returns the Accounts belonging to the Category and their balances.
 
@@ -78,7 +84,7 @@ class Category(IsolatingMixin, Recyclable):
         """
         _, end_date, _, _ = get_dates(session, None, end_date)
 
-        balances = {"total": 0, "accounts": []}
+        balances: dict[str, Any] = {"total": 0, "accounts": []}
 
         for account in self.accounts:
             account.balance = account.closing_balance(session, end_date)

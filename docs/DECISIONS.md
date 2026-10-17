@@ -306,6 +306,22 @@ Baselines this effort must drive to zero, measured 2026-10-16:
   direction fails the suite.
 - **Evidence:** landing commit moved mypy 414 → 339 and pyright 317 → 198; 122 tests
   pass; runtime enum values and iteration unchanged (full suite + hash-chain tests).
+- **Implementation notes (2026-10-17, landed with the account/category passes):**
+  three details are load-bearing and were each proven by checker probe:
+  (a) each class attribute is declared `EnumName: ClassVar["type[Stub]"] = enum_var`.
+  The explicit annotation is **required** — without it mypy's fixpoint in modules
+  analyzed mid-import-cycle (`category`, `income_statement`, `balance_sheet`, 19
+  `has-type` errors) fails with `Cannot determine type of AccountType`; the
+  `ClassVar` wrapper is what keeps SQLAlchemy from treating the annotation as a
+  mapping directive (SA skips ClassVar-annotated attributes when mapping).
+  (b) inside the owning class body the stub is reachable through an explicit
+  `StubName: TypeAlias = StubName` alias declared in the `TYPE_CHECKING` block,
+  because the class attribute shadows the module-level stub name.
+  (c) the class attribute **cannot** be used in type-expression positions —
+  pyright rejects any annotated attribute there (`reportInvalidTypeForm`).
+  Annotation positions must import the stub class under `TYPE_CHECKING` instead
+  (`account_type: "AccountType"`); value positions (`Account.AccountType.BANK`)
+  stay untouched. First fix of this kind: `reports/aging_schedule.py`.
 
 ---
 

@@ -11,9 +11,16 @@ Represents amounts oustanding to/from suppliers/clients, grouped by their age.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
+
 from python_accounting.models import Account
 from python_accounting.config import config
 from python_accounting.utils.dates import get_dates
+
+if TYPE_CHECKING:
+    # Account.AccountType is a ClassVar on the mapped class and cannot be used as
+    # a type expression (DECISIONS.md D-015), so the stub class is imported here.
+    from python_accounting.models.account import AccountType
 
 
 class AgingSchedule:
@@ -60,7 +67,7 @@ class AgingSchedule:
     def __init__(
         self,
         session,
-        account_type: Account.AccountType,
+        account_type: "AccountType",
         end_date: datetime = None,
     ) -> None:
         self.account_type = account_type
