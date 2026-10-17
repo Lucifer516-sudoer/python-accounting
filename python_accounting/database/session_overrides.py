@@ -12,11 +12,17 @@ accounting specific behavior. It also provides custom methods specific to accoun
 """
 
 from datetime import datetime
-from sqlalchemy import select
-from sqlalchemy.orm import Mapped
+from typing import Any, TypeVar
 
-from python_accounting.models import Recycled, Entity, Assignment
+from sqlalchemy import select
+from sqlalchemy.orm import Mapper
+
+from python_accounting.models import Recyclable, Recycled, Entity, Assignment
 from python_accounting.exceptions import SessionEntityError
+
+# The model type fetched by SessionOverridesMixin.get; Recyclable is the root
+# mapped class that carries the primary key (id).
+_O = TypeVar("_O", bound="Recyclable")
 
 
 class SessionOverridesMixin:
@@ -24,21 +30,26 @@ class SessionOverridesMixin:
     Session overrides class.
     """
 
-    def get(self, model, primary_key, **kwargs) -> Mapped["Base"]:
+    def get(
+        self, entity: "type[_O] | Mapper[_O]", ident: Any, **kwargs: Any
+    ) -> "_O | None":
         """
         Overrides sqlalchemy the get method to use select thereby ensuring global filters
         are applied.
 
         Args:
-            model (`DeclarativeBase`): The model class.
-            primary_key (`int`): The primary key of the instance being fetched.
+            entity (`DeclarativeBase`): The model class.
+            ident (`int`): The primary key of the instance being fetched.
 
         Returns:
             The model instance if found, else None.
 
         """
+        if isinstance(entity, Mapper):
+            entity = entity.class_
+
         return self.scalar(
-            select(model).where(model.id == primary_key).execution_options(**kwargs)
+            select(entity).where(entity.id == ident).execution_options(**kwargs)
         )
 
     def delete(self, instance) -> bool:
