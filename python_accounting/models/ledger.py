@@ -14,6 +14,7 @@ import hashlib
 from datetime import datetime
 from copy import deepcopy
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum, select
 from sqlalchemy.types import DECIMAL
@@ -21,6 +22,16 @@ from strenum import StrEnum
 from python_accounting.mixins import IsolatingMixin
 from python_accounting.config import config
 from python_accounting.models import Recyclable, Balance, Transaction
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Connection
+
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.account import Account
+    from python_accounting.models.balance import BalanceType
+    from python_accounting.models.currency import Currency
+    from python_accounting.models.line_item import LineItem
+    from python_accounting.transactions.journal_entry import JournalEntry
 
 
 class Ledger(IsolatingMixin, Recyclable):
@@ -85,7 +96,13 @@ class Ledger(IsolatingMixin, Recyclable):
 
     @staticmethod
     def _allocate_amount(  # noqa: PLR0913, PLR0917
-        session, post, amount, posts, folios, transaction, entry_type
+        session: "AccountingSession",
+        post: int,
+        amount: Decimal,
+        posts: list[list[Any]],
+        folios: list[list[Any]],
+        transaction: Transaction,
+        entry_type: "BalanceType",
     ) -> None:
         if amount == 0:
             posts.pop(0)
@@ -106,7 +123,7 @@ class Ledger(IsolatingMixin, Recyclable):
         if folio_amount > amount:
             ledger.amount = amount
             folios[0][1] -= amount
-            amount = 0
+            amount = Decimal(0)
         else:
             ledger.amount = folio_amount
             amount -= folio_amount
@@ -121,11 +138,11 @@ class Ledger(IsolatingMixin, Recyclable):
 
     @staticmethod
     def _make_compound_ledgers(
-        session,
-        posts: list,
-        folios: list,
+        session: "AccountingSession",
+        posts: list[list[Any]],
+        folios: list[list[Any]],
         transaction: Transaction,
-        entry_type: Balance.BalanceType,
+        entry_type: "BalanceType",
     ) -> None:
         if posts == []:
             return None
@@ -135,7 +152,9 @@ class Ledger(IsolatingMixin, Recyclable):
         )
 
     @staticmethod
-    def _post_compound(session, transaction: Transaction) -> None:
+    def _post_compound(
+        session: "AccountingSession", transaction: "JournalEntry"
+    ) -> None:
         # Debit amounts ledgers
         debit_ledgers, credit_ledgers = transaction.get_compound_entries()
         Ledger._make_compound_ledgers(
@@ -157,7 +176,7 @@ class Ledger(IsolatingMixin, Recyclable):
         )
 
     @staticmethod
-    def _transaction_ledgers(transaction: Transaction) -> tuple:
+    def _transaction_ledgers(transaction: Transaction) -> "tuple[Ledger, Ledger]":
         post, folio = Ledger(), Ledger()
         post.entity_id = folio.entity_id = transaction.entity_id
         post.entry_type, folio.entry_type = (
@@ -174,7 +193,7 @@ class Ledger(IsolatingMixin, Recyclable):
         return post, folio
 
     @staticmethod
-    def _post_simple(session, transaction: Transaction) -> None:
+    def _post_simple(session: "AccountingSession", transaction: Transaction) -> None:
         for line_item in transaction.line_items:
             amount = line_item.amount * line_item.quantity
             post, folio = Ledger._transaction_ledgers(transaction)
@@ -220,20 +239,20 @@ class Ledger(IsolatingMixin, Recyclable):
             session.commit()
 
     @staticmethod
-    def post(session, transaction: Transaction) -> None:
+    def post(session: "AccountingSession", transaction: Transaction) -> None:
         """
         Posts the Transaction to the ledger.
 
         Args:
-            session (Session): The accounting session to which the Account belongs.
+            session (AccountingSession): The accounting session to which the Account belongs.
             transaction (Transaction): The Transaction to be posted.
         """
         if transaction.compound:
-            Ledger._post_compound(session, transaction)
+            Ledger._post_compound(session, cast("JournalEntry", transaction))
         else:
             Ledger._post_simple(session, transaction)
 
-    def get_hash(self, connection) -> str:
+    def get_hash(self, connection: "Connection") -> str:
         """
         Calculate the hash of the Ledger.
 
@@ -248,7 +267,7 @@ class Ledger(IsolatingMixin, Recyclable):
             select(Ledger).where(Ledger.id == self.id - 1)
         ).fetchone()
 
-        return getattr(hashlib, config.hashing["algorithm"])(
+        digest = getattr(hashlib, config.hashing["algorithm"])(
             ",".join(
                 list(
                     map(
@@ -270,3 +289,5 @@ class Ledger(IsolatingMixin, Recyclable):
                 )
             ).encode()
         ).hexdigest()
+
+        return str(digest)

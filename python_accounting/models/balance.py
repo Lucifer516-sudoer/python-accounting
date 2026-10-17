@@ -12,7 +12,7 @@ Represents the amount outstanding on a Transaction from a previous Reporting Per
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum, select
 from sqlalchemy.types import DECIMAL
@@ -34,6 +34,7 @@ from python_accounting.mixins import IsolatingMixin, ClearingMixin
 from python_accounting.reports import IncomeStatement
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
 
     class BalanceType(StrEnum):
         """Stub mirroring the fixed BalanceType members for the type checkers.
@@ -58,13 +59,23 @@ if TYPE_CHECKING:
         SUPPLIER_BILL = ""
         JOURNAL_ENTRY = ""
 
+    # Alias for use inside the Balance class body, where the Balance.BalanceType
+    # class attribute shadows the module-level stub. Explicit TypeAlias so that
+    # pyright accepts it in type expressions (e.g. ``type[BalanceTypeStub]``).
+    BalanceTypeStub: TypeAlias = BalanceType
 
-balance_type_enum = cast(
+    # Alias for use inside the Balance class body, where the
+    # Balance.BalanceTransactions class attribute shadows the module-level stub.
+    # Explicit TypeAlias so that pyright accepts it in type expressions.
+    BalanceTransactionsStub: TypeAlias = BalanceTransactions
+
+
+balance_type_enum: "type[BalanceType]" = cast(
     "type[BalanceType]",
     StrEnum("BalanceType", [("DEBIT", "Debit"), ("CREDIT", "Credit")]),
 )
 
-balance_transactions_enum = cast(
+balance_transactions_enum: "type[BalanceTransactions]" = cast(
     "type[BalanceTransactions]",
     StrEnum(
         "BalanceTransactions",
@@ -85,9 +96,11 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
 
     __tablename__ = "balance"
 
-    BalanceType = balance_type_enum
+    BalanceType: ClassVar["type[BalanceTypeStub]"] = balance_type_enum
     """(StrEnum): The double entry types of Balances."""
-    BalanceTransactions = balance_transactions_enum
+    BalanceTransactions: ClassVar["type[BalanceTransactionsStub]"] = (
+        balance_transactions_enum
+    )
     """(StrEnum): A list of Transaction Types that can have Balances."""
 
     __mapper_args__ = {"polymorphic_identity": "Balance"}
