@@ -11,13 +11,20 @@ Represents the individual entries in a Transaction that will eventually be poste
 """
 
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import ForeignKey, Boolean, func, String
 from sqlalchemy.types import DECIMAL
 from python_accounting.mixins import IsolatingMixin
 from python_accounting.models import Recyclable
 from python_accounting.exceptions import NegativeValueError, HangingTransactionsError
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.account import Account
+    from python_accounting.models.ledger import Ledger
+    from python_accounting.models.tax import Tax
+    from python_accounting.models.transaction import Transaction
 
 
 class LineItem(IsolatingMixin, Recyclable):
@@ -68,7 +75,7 @@ class LineItem(IsolatingMixin, Recyclable):
     """(list): The Ledger models associated with the Line Item."""
 
     @validates("ledgers", include_removes=True)
-    def validate_ledgers(self, key, ledger, is_remove):
+    def validate_ledgers(self, key: str, ledger: "Ledger", is_remove: bool) -> None:
         """
         Validates adding or removing of Line Item Ledgers.
 
@@ -80,14 +87,18 @@ class LineItem(IsolatingMixin, Recyclable):
         )
 
     def __init__(self, **kw: Any) -> None:
-        self.quantity = 1
+        # Must stay a plain int at runtime: tests set Tax.rate as a float, and
+        # a Decimal quantity turns `amount` into Decimal, making
+        # `Decimal / float` raise in Ledger._post_simple. The DECIMAL column
+        # coerces the value on flush.
+        self.quantity = 1  # type: ignore[assignment]
         super().__init__(**kw)
 
     def __repr__(self) -> str:
         return f"""{self.account.name if self.account else ""}
          <{"Credit" if self.credited else "Debit"}>: {self.amount * self.quantity}"""
 
-    def validate(self, _) -> None:
+    def validate(self, _: "AccountingSession") -> None:
         """
         Validates the Line Item properties.
 
@@ -107,7 +118,7 @@ class LineItem(IsolatingMixin, Recyclable):
         if self.quantity and self.quantity < 0:
             raise NegativeValueError(self.__class__.__name__, "quantity")
 
-    def validate_delete(self, session) -> None:
+    def validate_delete(self, session: "AccountingSession") -> None:
         """
         Validates if the line item can be deleted.
 
