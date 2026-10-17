@@ -785,6 +785,7 @@ dev = [
     { name = "pyright" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "types-python-dateutil" },
     { name = "types-toml" },
 ]
 docs = [
@@ -799,6 +800,7 @@ lint = [
     { name = "pre-commit", version = "4.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyright" },
     { name = "ruff" },
+    { name = "types-python-dateutil" },
     { name = "types-toml" },
 ]
 test = [
@@ -824,6 +826,7 @@ dev = [
     { name = "pyright", specifier = ">=1.1.414,<1.2" },
     { name = "pytest", specifier = ">=7.4.3,<8.0" },
     { name = "ruff", specifier = ">=0.14.10,<0.15" },
+    { name = "types-python-dateutil", specifier = ">=2.9.0.20260807" },
     { name = "types-toml", specifier = ">=0.10.8.20260518" },
 ]
 docs = [
@@ -837,6 +840,7 @@ lint = [
     { name = "pre-commit", specifier = ">=4.0.0,<5.0" },
     { name = "pyright", specifier = ">=1.1.414,<1.2" },
     { name = "ruff", specifier = ">=0.14.10,<0.15" },
+    { name = "types-python-dateutil", specifier = ">=2.9.0.20260807" },
     { name = "types-toml", specifier = ">=0.10.8.20260518" },
 ]
 test = [{ name = "pytest", specifier = ">=7.4.3,<8.0" }]
@@ -1187,6 +1191,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/98/d52024bb5b0ff68b4f0d276d867f634c84a67319a7e9f6b7708a37742333/tomli-2.5.0-cp313-cp313-win_amd64.whl", hash = "sha256:fd4dc129784e0c5335bd4e61dfcc4487499a013419e655cf2da1d091b7e0efdc", size = 113301, upload-time = "2026-10-07T12:22:47.647Z" },
     { url = "https://files.pythonhosted.org/packages/6f/f2/540db3a70572a8c23a28aba3e9c358ce0ffffbafc990905c1343aa265b31/tomli-2.5.0-cp313-cp313-win_arm64.whl", hash = "sha256:69491c143d2fe063046e0301e62a810bed338fa4d1ce0fd870c27dc1e09b0d84", size = 109744, upload-time = "2026-10-07T12:22:48.925Z" },
     { url = "https://files.pythonhosted.org/packages/60/3f/3e3f8fd0919249b0200c80fbc4f9a1e70be19f9883da71dfb7f8b9ab8aca/tomli-2.5.0-py3-none-any.whl", hash = "sha256:32a7b79ac57a2e83670ce329ccf675798bc5a2094783a63676866b70503f2e2b", size = 14765, upload-time = "2026-10-07T12:23:36.875Z" },
+]
+
+[[package]]
+name = "types-python-dateutil"
+version = "2.9.0.20260807"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/4e/b3fa538f9cb38dfece0d6ccf6d3d0d925bdedb144fb9c8129dfc007cd003/types_python_dateutil-2.9.0.20260807.tar.gz", hash = "sha256:e0b8a90d464c8684c66b7b8e4556d9074afdddcc56ca45323f0987134f9e7034", size = 17618, upload-time = "2026-08-07T04:17:13.491Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e4/5e/3715867caea2f4cea56ccb04c851cde23ed063449c3b004c7a047f20dd48/types_python_dateutil-2.9.0.20260807-py3-none-any.whl", hash = "sha256:54aa3707350ed7a9cc0776fd2f6739679d6967d11b40150985e81edcb86df4db", size = 18486, upload-time = "2026-08-07T04:17:12.504Z" },
 ]
 
 [[package]]

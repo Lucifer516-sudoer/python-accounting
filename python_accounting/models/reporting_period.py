@@ -12,6 +12,7 @@ Represents a financial cycle of an Entity.
 
 from enum import Enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import ForeignKey, UniqueConstraint, func, select
@@ -22,6 +23,10 @@ from python_accounting.exceptions import (
     MultipleOpenPeriodsError,
 )
 from python_accounting.models import Recyclable
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.entity import Entity
 
 
 class ReportingPeriod(IsolatingMixin, Recyclable):
@@ -61,14 +66,14 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
         return f"{self.calendar_year} <Period {self.period_count}>"
 
     @staticmethod
-    def date_year(date: datetime = None, entity=None) -> int:
+    def date_year(date: datetime | None = None, entity: "Entity | None" = None) -> int:
         """
         Returns the calendar year for the given date.
 
         Args:
             date (`datetime`, optional): The date whose calendar year is
                 to be found. Defaults to the current date.
-            entity (`int`, optional): The Entity for whom the calendar year
+            entity (`Entity`, optional): The Entity for whom the calendar year
                 is to be found. If absent, defaults to the calendar year.
 
         Returns:
@@ -83,13 +88,13 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
         return year if month >= entity.year_start else year - 1
 
     @staticmethod
-    def get_period(session, date: datetime) -> "ReportingPeriod":
+    def get_period(session: "AccountingSession", date: datetime) -> "ReportingPeriod":
         """
         Returns the reporting period for the given date.
 
         Args:
-            session (Session): The accounting session to which the Reporting Period
-                 belongs.
+            session (AccountingSession): The accounting session to which the
+                Reporting Period belongs.
             date (datetime): The date whose Reporting Period is to be found.
 
         Raises:
@@ -114,12 +119,13 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
         except StopIteration as exc:
             raise MissingReportingPeriodError(session.entity, year) from exc
 
-    def validate(self, session) -> None:
+    def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Reporting Period properties.
 
         Args:
-            session (Session): The accounting session to which the ReportingPeriod belongs.
+            session (AccountingSession): The accounting session to which the
+                ReportingPeriod belongs.
 
         Raises:
             DuplicateReportingPeriodError: If there already exists a Reporting Period
@@ -152,23 +158,16 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
             ) > 0 and self.status == ReportingPeriod.Status.OPEN:
                 raise MultipleOpenPeriodsError
 
-    def interval(self, date: datetime = None) -> dict:
+    def interval(self, date: datetime | None = None) -> dict[str, datetime]:
         """
         Returns the start and end dates of the Reporting Period.
 
         Args:
-            session (Session): The accounting session to which the Reporting Period
-                 belongs.
-            date (datetime): The date for whose Reporting Period's interval is to
-                be found.
-
-        Raises:
-            MissingReportingPeriodError: If there no Reporting Period exists for the
-                given date.
-
+            date (`datetime`, optional): The date for whose Reporting Period's
+                interval is to be found.
 
         Returns:
-            ReportingPeriod: The Reporting Period.
+            dict: The start and end datetimes of the Reporting Period.
 
         """
         year = (
