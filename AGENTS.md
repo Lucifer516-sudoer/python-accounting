@@ -13,11 +13,12 @@ same working tree: one committed under the other and edited files mid-verificati
 Before starting work, confirm no other session is live; before committing, re-check
 `git status` and `git log -1`.
 
-Progress: T0–T2 done; T3.0–T3.9 done (base, recyclable, recycled, currency, user,
-account, category, tax, reporting_period, transaction, ledger `91ece95`, line_item
-`20922c7`). Remaining in T3: **balance → assignment → entity**, one commit each.
-Current totals to beat: **mypy 234 / pyright 161 / pytest 122 / ruff format 90 files
-clean**. Per-file DoD: 0 errors in both checkers; totals strictly decrease.
+Progress: T0–T3 done — every model file is 0/0 in both checkers. T3 commits: base,
+recyclable, recycled, currency, user, account, category, tax, reporting_period,
+transaction, ledger `91ece95`, line_item `20922c7`, balance `1cda640`, assignment
+`e6fa5ce`, entity `5ab5291`. Current totals to beat: **mypy 221 / pyright 155 /
+pytest 122 / ruff format 90 files clean**. Per-file DoD: 0 errors in both checkers;
+totals strictly decrease.
 
 Hard-won lessons baked into the code (do not undo):
 
@@ -37,7 +38,7 @@ Hard-won lessons baked into the code (do not undo):
 - zsh eats backticks in `git commit -m` messages (command substitution). Use single
   quotes or a heredoc.
 
-Next up after T3: T4.1 six mixins (isolating `foreign_keys` string-form probe first,
+Next up: T4.1 six mixins (isolating `foreign_keys` string-form probe first,
 D-007), T4.2 session layer (**user checkpoint pending: `delete -> None`**, D-009),
 T4.3 dead-code removal, T4.4b `contribution()` test-first fix (D-010 — the precedence
 bug is deliberately still present, wrapped in `Decimal(...)` with a NOTE comment).
