@@ -10,9 +10,16 @@ Represents the person, real or artifial engaging in financial Transactions.
 
 """
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Boolean, ForeignKey
 from python_accounting.models import Recyclable, ReportingPeriod
+
+if TYPE_CHECKING:
+    # Quoted relationship targets below; resolved at runtime by SQLAlchemy's
+    # registry, imported only for the checkers (D-004).
+    from python_accounting.models import Currency, User
 
 
 class Entity(Recyclable):
