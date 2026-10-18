@@ -13,10 +13,11 @@ Represents an matching between Transactions that have an opposite effect on an A
 import importlib
 from decimal import Decimal
 from datetime import datetime
+from typing import TYPE_CHECKING, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, func, String
 from sqlalchemy.types import DECIMAL
-from python_accounting.mixins import IsolatingMixin
+from python_accounting.mixins import IsolatingMixin, AssigningMixin, ClearingMixin
 from python_accounting.models import Balance, Transaction, Base
 from python_accounting.config import config
 from python_accounting.exceptions import (
@@ -32,6 +33,9 @@ from python_accounting.exceptions import (
     OverclearanceError,
     MixedAssignmentError,
 )
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
 
 
 class Assignment(IsolatingMixin, Base):
@@ -82,7 +86,7 @@ class Assignment(IsolatingMixin, Base):
         on {self.assignment_date}
         for {self.amount}"""
 
-    def assigned(self, session) -> Transaction:
+    def assigned(self, session: "AccountingSession") -> "Transaction | Balance | None":
         """
         Get the clearable Transaction|Balance assigned to this assigment's transaction.
 
@@ -90,16 +94,22 @@ class Assignment(IsolatingMixin, Base):
             session (Session): The accounting session to which the Assignment belongs.
 
         Returns:
-            Transaction|Balance: The model cleared by this assignment.
+            Transaction|Balance: The model cleared by this assignment, if found.
         """
         module = (
             importlib.import_module("python_accounting.models")
             if self.assigned_type in [Transaction.__name__, Balance.__name__]
             else importlib.import_module("python_accounting.transactions")
         )
-        return session.get(getattr(module, self.assigned_type), self.assigned_id)
+        # The assigned model class is looked up by name at runtime, so the
+        # checkers cannot see it; the cast records that the result is always
+        # a Transaction (an STI subclass) or a Balance, or None if unfound.
+        return cast(
+            "Transaction | Balance | None",
+            session.get(getattr(module, self.assigned_type), self.assigned_id),
+        )
 
-    def validate(self, session) -> None:  # noqa: PLR0912
+    def validate(self, session: "AccountingSession") -> None:  # noqa: PLR0912
         """
         Validates the Assignment properties.
 
@@ -130,9 +140,14 @@ class Assignment(IsolatingMixin, Base):
 
         if transaction.transaction_type not in Assignment.assignables:
             raise UnassignableTransactionError(
-                transaction.__class__.__name__, Assignment.assignables
+                transaction.__class__.__name__,
+                [t.value for t in Assignment.assignables],
             )
+        # Assignable Transaction types carry AssigningMixin (the config-driven
+        # list only names classes that do), so balance() is available below.
+        assert isinstance(transaction, AssigningMixin)
 
+        assigned: Balance | Transaction | None
         if self.assigned_type == Balance.__name__:
             assigned = session.get(Balance, self.assigned_id)
             if not assigned:
@@ -143,8 +158,12 @@ class Assignment(IsolatingMixin, Base):
                 raise ValueError("The Assigned Transaction was not found")
             if assigned.transaction_type not in Assignment.clearables:
                 raise UnclearableTransactionError(
-                    assigned.__class__.__name__, Assignment.clearables
+                    assigned.__class__.__name__,
+                    [t.value for t in Assignment.clearables],
                 )
+        # Clearable Transaction types carry ClearingMixin, and Balance does
+        # too, so cleared() is available on either branch below.
+        assert isinstance(assigned, ClearingMixin)
         self.assigned_no = assigned.transaction_no
         if not transaction.is_posted or not assigned.is_posted:
             raise UnpostedAssignmentError
