@@ -12,7 +12,7 @@ Represents the amount outstanding on a Transaction from a previous Reporting Per
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar, TypedDict, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum, select
 from sqlalchemy.types import DECIMAL
@@ -35,6 +35,8 @@ from python_accounting.reports import IncomeStatement
 
 if TYPE_CHECKING:
     from typing import TypeAlias
+
+    from python_accounting.database.session import AccountingSession
 
     class BalanceType(StrEnum):
         """Stub mirroring the fixed BalanceType members for the type checkers.
@@ -89,6 +91,14 @@ balance_transactions_enum: "type[BalanceTransactions]" = cast(
         ],
     ),
 )
+
+
+class OpeningTrialBalance(TypedDict):
+    """Shape of the summary returned by :meth:`Balance.opening_trial_balance`."""
+
+    debits: Decimal
+    credits: Decimal
+    accounts: list["Account"]
 
 
 class Balance(IsolatingMixin, ClearingMixin, Recyclable):
@@ -155,7 +165,9 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
         return False
 
     @staticmethod
-    def opening_trial_balance(session, year: int = None) -> dict:
+    def opening_trial_balance(
+        session: "AccountingSession", year: int | None = None
+    ) -> OpeningTrialBalance:
         """
         Gets the total opening balances for the Entity's accounts for the given year.
 
@@ -173,7 +185,11 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
                 - accounts (Decimal): Accounts constituting the opening trial balance.
 
         """
-        balances = {"debits": 0, "credits": 0, "accounts": []}
+        balances: OpeningTrialBalance = {
+            "debits": Decimal(0),
+            "credits": Decimal(0),
+            "accounts": [],
+        }
         year = year or session.entity.reporting_period.calendar_year
 
         for account in session.scalars(select(Account)).all():
@@ -186,7 +202,7 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
                     balances["credits"] += balance
         return balances
 
-    def validate(self, session) -> None:
+    def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Balance properties.
 
@@ -204,11 +220,13 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
         """
         reporting_period = session.entity.reporting_period
         account = session.get(Account, self.account_id)
+        assert account is not None
         self.currency_id = account.currency_id
         self.reporting_period_id = reporting_period.id
 
         if not self.transaction_no:
             currency = session.get(Currency, self.currency_id)
+            assert currency is not None
             self.transaction_no = (
                 f"{self.account_id}{currency.code}{reporting_period.calendar_year}"
             )
@@ -216,7 +234,9 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
         if self.amount < 0:
             raise NegativeValueError(self.__class__.__name__)
 
-        if account.account_type in [t.value for t in IncomeStatement.Accounts]:
+        # str(t) == t.value for StrEnum members; IncomeStatement.Accounts is a
+        # raw factory result until the reports pass gives it a checker stub.
+        if account.account_type in [str(t) for t in IncomeStatement.Accounts]:
             raise InvalidBalanceAccountError
 
         if self.transaction_type not in [t.value for t in Balance.BalanceTransactions]:
