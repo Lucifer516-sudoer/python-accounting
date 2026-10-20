@@ -137,6 +137,10 @@ select = [
            # The runtime-evaluated-base-classes guard below stops it from
            # moving SQLAlchemy model imports that annotations evaluate at
            # mapper-configuration time.
+    "ANN", # flake8-annotations. The 2.0 annotation pass left the library
+           # fully annotated, so this gate keeps it that way. ANN401 is
+           # ignored globally (see below); the tests directory is exempted
+           # from ANN entirely (see per-file-ignores).
 ]
 # Every entry here is a deliberate decision, not a backlog. Adding one requires
 # a comment saying why.
@@ -177,6 +181,13 @@ ignore = [
     "PLC0415",
     # Comparing an amount against a literal is the domain, not a smell.
     "PLR2004",
+    # The library deliberately mirrors SQLAlchemy's dynamic API at named
+    # seams: model constructors pass `**kw` through to the declarative base,
+    # the session overrides mirror `Session.get(ident, **kwargs)`, and the
+    # ORM event listeners receive arbitrary mapped objects (`object_: Any`).
+    # These are the documented seams of D-008/D-009, not missing annotations;
+    # every other ANN rule still applies.
+    "ANN401",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -184,7 +195,14 @@ ignore = [
 # been held to the complexity limits. Long linear test bodies and wide helper
 # signatures are idiomatic in tests; every other rule still applies there, and
 # the library above stays under these limits.
-"tests/*.py" = ["PLR0912", "PLR0913", "PLR0915"]
+"tests/*.py" = ["PLR0912", "PLR0913", "PLR0915",
+    # Tests are the safety net, not API (SPEC §4): they are already fully
+    # type-checked by mypy (non-strict, check_untyped_defs) and pyright, and
+    # annotating the ~500 test-helper parameters would be a mechanical
+    # rewrite of the suite for no correctness gain. Every other rule still
+    # applies here.
+    "ANN",
+]
 
 [tool.ruff.lint.flake8-type-checking]
 # Declarative model classes evaluate their annotations at runtime (SQLAlchemy
