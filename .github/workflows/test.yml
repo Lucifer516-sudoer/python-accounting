@@ -39,5 +39,11 @@ jobs:
         run: uv run --python 3.12 ruff format --check .
       - name: Lint with ruff
         run: uv run --python 3.12 ruff check
+      - name: Type check with mypy (strict, package)
+        run: uv run --python 3.12 mypy python_accounting
+      - name: Type check with mypy (tests)
+        run: uv run --python 3.12 mypy tests
+      - name: Type check with pyright
+        run: uv run --python 3.12 pyright
       - name: Test with pytest
         run: uv run --python 3.12 pytest -v
