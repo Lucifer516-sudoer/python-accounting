@@ -3,7 +3,7 @@
 Double-entry accounting **library** (PyPI: `python-accounting`), not an app. Core written
 Nov 2023 – Mar 2024; only lightly maintained since. Sibling repo `python-profit` may consume it.
 
-## 2.0 remodel status (updated 2026-10-17, end of day)
+## 2.0 remodel status (updated 2026-10-20)
 
 The contract is `docs/SPEC.md` (acceptance A1–A11) + `docs/DECISIONS.md` (D-001…D-015)
 + `docs/PLAN.md` (T0–T9). Read all three before touching anything.
@@ -12,6 +12,12 @@ The contract is `docs/SPEC.md` (acceptance A1–A11) + `docs/DECISIONS.md` (D-00
 same working tree: one committed under the other and edited files mid-verification.
 Before starting work, confirm no other session is live; before committing, re-check
 `git status` and `git log -1`.
+
+**Plan reorder (user-approved 2026-10-20):** Phase 9 (docs site, T9.1–T9.3) was pulled
+ahead of T4.1. The MkDocs site is live (`mkdocs.yml`, Material + mkdocstrings;
+`uv run mkdocs build --strict` is zero-warning; Sphinx artifacts deleted;
+`.readthedocs.yaml` migrated). T9.4 (release prep) stays at the end. Next up is T4.1
+(six mixins) as originally planned — the API reference self-heals as annotations land.
 
 Progress: T0–T3 done — every model file is 0/0 in both checkers. T3 commits: base,
 recyclable, recycled, currency, user, account, category, tax, reporting_period,
