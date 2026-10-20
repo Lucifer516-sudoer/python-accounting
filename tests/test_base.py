@@ -18,8 +18,12 @@ def test_timestamp_column_defaults_are_callable():
     # mapper rather than Account.__table__.c.
     columns = Account.__mapper__.columns
 
-    assert columns["created_at"].default.is_callable
-    assert columns["updated_at"].default.is_callable
+    created_default = columns["created_at"].default
+    updated_default = columns["updated_at"].default
+    assert created_default is not None
+    assert updated_default is not None
+    assert created_default.is_callable
+    assert updated_default.is_callable
 
 
 def test_timestamps_reflect_insert_time(session, entity):

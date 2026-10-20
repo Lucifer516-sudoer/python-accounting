@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from datetime import datetime
 from python_accounting.models import Account, Tax, LineItem, Balance
 from python_accounting.transactions import JournalEntry
@@ -290,7 +291,7 @@ def test_journal_entry_validation(session, entity, currency):
         == "A Compound Journal Entry Transaction must have a main account amount."
     )
 
-    transaction.main_account_amount = 25
+    transaction.main_account_amount = Decimal("25")
     line_item1 = LineItem(
         narration="Test line item one",
         account_id=account2.id,

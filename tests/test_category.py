@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
@@ -210,9 +211,9 @@ def test_account_balances(session, entity, currency):
     invoice.post(session)
 
     revenue_accounts = revenue_category.account_balances(session)
-    revenue_accounts["total"] = -100
+    revenue_accounts["total"] = Decimal("-100")
     revenue_accounts["accounts"] = [revenue]
 
     client_accounts = revenue_category.account_balances(session)
-    client_accounts["total"] = 175
+    client_accounts["total"] = Decimal("175")
     client_accounts["accounts"] = [client1, client2]

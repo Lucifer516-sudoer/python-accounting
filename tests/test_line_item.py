@@ -64,8 +64,8 @@ def test_line_item_validation(session, entity, currency):
         session.commit()
     assert str(e.value) == "LineItem amount cannot be negative."
 
-    line_item.amount = 10
-    line_item.quantity = -1
+    line_item.amount = Decimal("10")
+    line_item.quantity = Decimal("-1")
     session.add(line_item)
 
     with pytest.raises(NegativeValueError) as e:

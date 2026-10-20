@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
@@ -99,7 +100,7 @@ def test_balance_validation(session, entity, currency):
     )
 
     balance.transaction_type = Transaction.TransactionType.JOURNAL_ENTRY
-    balance.amount = -1
+    balance.amount = Decimal("-1")
     session.add(balance)
 
     with pytest.raises(NegativeValueError) as e:

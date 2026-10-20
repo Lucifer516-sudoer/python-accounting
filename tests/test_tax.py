@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from datetime import datetime
 from sqlalchemy import select
 from python_accounting.models import Tax, Entity, Account, LineItem
@@ -63,7 +64,7 @@ def test_tax_validation(session, entity, currency):
     with pytest.raises(NegativeValueError):
         session.commit()
 
-    tax.rate = 10
+    tax.rate = Decimal("10")
     session.add(tax)
 
     account.account_type = Account.AccountType.OPERATING_REVENUE

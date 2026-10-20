@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from python_accounting.transactions import ClientReceipt, ClientInvoice, JournalEntry
@@ -214,14 +215,14 @@ def test_assignment_validation(session, entity, currency):
     session.expunge(assignment)
 
     assignment.assigned_id = transaction1.id
-    assignment.amount = -1
+    assignment.amount = Decimal("-1")
 
     with pytest.raises(NegativeValueError) as e:
         session.add(assignment)
     assert str(e.value) == "Assignment amount cannot be negative."
 
     session.expunge(assignment)
-    assignment.amount = 5000
+    assignment.amount = Decimal("5000")
 
     with pytest.raises(InsufficientBalanceError) as e:
         session.add(assignment)
@@ -253,7 +254,7 @@ def test_assignment_validation(session, entity, currency):
     session.commit()
 
     assignment.assigned_id = transaction3.id
-    assignment.amount = 15
+    assignment.amount = Decimal("15")
 
     with pytest.raises(UnpostedAssignmentError) as e:
         session.add(assignment)
@@ -366,7 +367,7 @@ def test_assignment_validation(session, entity, currency):
     transaction6.post(session)
 
     assignment.assigned_id = transaction1.id
-    assignment.amount = 40
+    assignment.amount = Decimal("40")
     session.add(assignment)
     session.commit()
 
