@@ -43,7 +43,7 @@ literals assigned to Mapped[Decimal] attrs, test_base is_callable,
 test_category TypedDict int literals), mypy tests 106 (mostly "call to untyped
 function in typed context" — test helper defs need annotations; T6.2 scope).
 
-Progress: T0–T5 done. T4.1 mixins (isolating `e7de7dd`, clearing `f842cc1`,
+Progress: T0–T8 done. T4.1 mixins (isolating `e7de7dd`, clearing `f842cc1`,
 assigning `75d6d56`, trading `d90e936`, buying+selling `e83cfed`), T4.2 session
 layer `5e886c3` (delete -> None user-approved), T4.3 dead code `e4e86d2`,
 get_engine `3d2cb62`, T4.4a2 money seam `526f1f3` (`utils/money.py`:
@@ -52,14 +52,27 @@ pre-existing ledger.py errors — Tax.account_id nullable vs NOT NULL ledger
 posts, assert-guarded), T4.4a get_hash `7dd4ebb` (earlier), T4.4b contribution
 `a12abac` (D-010 fixed test-first: dual-sided test RED with Decimal("150.0000")
 == 50, then routed through signed_sum), T4.4c header typo `99cf289`.
-Current totals to beat: **mypy package 0 / pyright package 0 / pyright tests
-13 / mypy tests 106 / pytest 148 / ruff format 93 files clean**. Per-file DoD:
-0 errors in both checkers; totals strictly decrease.
+T6.1 scripts (no commit needed — already 0/0), T6.2 tests (`441e4c6` pyright
+13→0 Decimal-wrapped literals + assert-guards; `1635b8b` mypy tests 106→0 via
+ExceptionInfo renames + helper/conftest annotations + named-seam casts).
+T7.1 TC rules + F821 per-file ignores deleted `3528552`; T7.2 ANN `b6a5da6`
+(ANN401 global ignore for SQLAlchemy seams; tests per-file-ignore ANN);
+T7.3 RUF+PERF `a348546` (RUF012 global ignore — ClassVar on `__mapper_args__`
+is rejected by both checkers; 3 ClassVar config lists kept).
+T8.1 pre-commit mypy+pyright hooks `2ccfd0f`→`2cccd0f`; T8.2 CI typecheck
+steps `83ec638` (test.yml steps + python-package.yml dedicated 3.12 job).
+T8.3 full gate A1–A9 green end-to-end; suppression inventory (A11): 1×
+`type: ignore[assignment]` (line_item.py:94, documented), 0× `pyright:
+ignore`, 3× `noqa` (account.py:628 B010, assignment.py:113 PLR0912,
+ledger.py:99 PLR0913 — all inline-justified).
+Current totals: **mypy package 0 / mypy tests 0 / pyright 0 / pytest 148 /
+ruff format 93 files clean / ruff check All checks passed / mkdocs --strict
+zero warnings / pre-commit 18 hooks green.**
 
-Next up: T6.1 scripts (already 0/0 in both checkers — verify annotations, then
-close), T6.2 tests (annotate helper defs for mypy; Decimal-wrap literal
-assignments for pyright — preserve exact values, see the clearing-commit
-precedent), T7 ruff ANN/TC/RUF/PERF, T8 hooks/CI, T9.4 release prep.
+Next up: T9.4 release prep — version 2.0.0, classifiers 3.10–3.13, CHANGELOG
+breaking lines (Python floor, delete->None return, exception spelling+alias,
+dead-code removal, __tablename__ explicitness, account stamps retired,
+get_engine factory), README docs links. No publish — user pushes the tag.
 
 T5.2 patterns worth reusing (reports/): instance-level config-driven StrEnums
 are typed by per-subclass TYPE_CHECKING stub classes + `sections: "_Sections"`
