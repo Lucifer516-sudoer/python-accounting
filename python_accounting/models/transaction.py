@@ -37,7 +37,7 @@ from python_accounting.exceptions import (
     InvalidTransactionTypeError,
 )
 from python_accounting.models import Recyclable, Account, ReportingPeriod, LineItem
-from python_accounting.utils.money import line_item_tax_amount
+from python_accounting.utils.money import line_item_tax_amount, signed_sum
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -370,13 +370,10 @@ class Transaction(IsolatingMixin, Recyclable):
             .filter(Ledger.currency_id == self.currency_id)
             .filter(Ledger.post_account_id == account.id)
         )
-        # NOTE: the Decimal() wrapper is type-checker-only; the precedence
-        # defect inside this expression is repaired test-first in T4.4b (D-010).
-        return Decimal(
-            query.filter(Ledger.entry_type == Balance.BalanceType.DEBIT).scalar()
-            or 0
-            - query.filter(Ledger.entry_type == Balance.BalanceType.CREDIT).scalar()
-            or 0
+        return signed_sum(
+            query,
+            Ledger.entry_type == Balance.BalanceType.DEBIT,
+            Ledger.entry_type == Balance.BalanceType.CREDIT,
         )
 
     def validate(self, session: "AccountingSession") -> None:

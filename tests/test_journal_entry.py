@@ -172,6 +172,78 @@ def test_compound_journal_entry_ledgers(session, entity, currency):
     assert transaction.amount == 175
 
 
+def test_contribution_dual_sided(session, entity, currency):
+    """Tests that contribution() nets debits minus credits for an account that
+    appears on both sides of one compound JournalEntry (D-010 regression)."""
+
+    main = Account(
+        name="main account",
+        account_type=Account.AccountType.INVENTORY,
+        currency_id=currency.id,
+        entity_id=entity.id,
+    )
+    account_a = Account(
+        name="dual sided account",
+        account_type=Account.AccountType.CONTRA_ASSET,
+        currency_id=currency.id,
+        entity_id=entity.id,
+    )
+    account_b = Account(
+        name="credit only account",
+        account_type=Account.AccountType.CONTROL,
+        currency_id=currency.id,
+        entity_id=entity.id,
+    )
+    session.add_all([main, account_a, account_b])
+    session.flush()
+
+    transaction = JournalEntry(
+        narration="Dual sided transaction",
+        transaction_date=datetime.now(),
+        account_id=main.id,
+        entity_id=entity.id,
+        credited=False,
+        main_account_amount=25,
+        compound=True,
+    )
+    session.add(transaction)
+    session.commit()
+
+    debit_item = LineItem(
+        narration="debit side",
+        account_id=account_a.id,
+        amount=150,
+        entity_id=entity.id,
+    )
+    credit_item = LineItem(
+        narration="credit side",
+        account_id=account_a.id,
+        amount=100,
+        credited=True,
+        entity_id=entity.id,
+    )
+    credit_item_b = LineItem(
+        narration="credit side b",
+        account_id=account_b.id,
+        amount=75,
+        credited=True,
+        entity_id=entity.id,
+    )
+    session.add_all([debit_item, credit_item, credit_item_b])
+    session.flush()
+
+    transaction.line_items.update([debit_item, credit_item, credit_item_b])
+    session.add(transaction)
+    session.flush()
+
+    transaction.post(session)
+
+    # Debits: main 25 + A 150 = 175; credits: A 100 + B 75 = 175.
+    assert transaction.contribution(session, account_a) == 50
+    assert transaction.contribution(session, account_b) == -75
+    assert transaction.contribution(session, main) == 25
+
+
 def test_journal_entry_validation(session, entity, currency):
     """Tests the validation of journal entry transactions"""
     account1 = Account(
