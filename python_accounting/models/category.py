@@ -97,10 +97,10 @@ class Category(IsolatingMixin, Recyclable):
         balances: CategoryBalances = {"total": Decimal(0), "accounts": []}
 
         for account in self.accounts:
-            account.balance = account.closing_balance(session, end_date)
+            account_balance = account.closing_balance(session, end_date)
 
-            if account.balance != 0:
-                balances["total"] += account.balance
+            if account_balance != 0:
+                balances["total"] += account_balance
                 balances["accounts"].append(account)
 
         return balances

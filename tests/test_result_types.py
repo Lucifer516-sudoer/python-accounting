@@ -15,6 +15,8 @@ accumulators with `int 0` today. (`Transaction.tax` already seeds
 from datetime import datetime
 from decimal import Decimal
 
+import pytest
+
 from python_accounting.models import (
     Account,
     Category,
@@ -304,3 +306,61 @@ class TestResultTypes:
         session.commit()
 
         return transaction
+
+
+class TestStampRetirement:
+    """T4.0c (D-016 §4): the balance methods stop stamping Account objects.
+
+    The reports-layer ``section_balances`` accumulates locally and returns the
+    ``SectionBalances`` dict; ``Category.account_balances`` accumulates locally
+    too. The stamped ``account.opening/closing/movement/balance`` attributes are
+    retired — reading them must raise ``AttributeError``.
+    """
+
+    def _section_setup(self, session, entity, currency):
+        """Category + one revenue account with a posted invoice; returns the account."""
+        category = Category(
+            name="Revenue Category",
+            category_account_type=Account.AccountType.OPERATING_REVENUE,
+            entity_id=entity.id,
+        )
+        session.add(category)
+        session.commit()
+        return _post_invoice_on_revenue(session, entity, currency, category)
+
+    def test_section_balances_does_not_stamp(self, session, entity, currency):
+        """Account.section_balances must not stamp opening/closing/movement."""
+        revenue = self._section_setup(session, entity, currency)
+
+        Account.section_balances(session, [Account.AccountType.OPERATING_REVENUE])
+
+        for attr in ("opening", "closing", "movement"):
+            with pytest.raises(AttributeError):
+                getattr(revenue, attr)
+
+    def test_account_balances_does_not_stamp(self, session, entity, currency):
+        """Category.account_balances must not stamp balance."""
+        category = Category(
+            name="Revenue Category",
+            category_account_type=Account.AccountType.OPERATING_REVENUE,
+            entity_id=entity.id,
+        )
+        session.add(category)
+        session.commit()
+        revenue = _post_invoice_on_revenue(session, entity, currency, category)
+
+        category.account_balances(session)
+
+        assert not hasattr(revenue, "balance")
+
+    def test_section_balances_alias_delegates(self, session, entity, currency):
+        """Account.section_balances returns the same dict as the reports function."""
+        from python_accounting.reports.financial_statement import (
+            section_balances as report_section_balances,
+        )
+
+        self._section_setup(session, entity, currency)
+
+        assert Account.section_balances(
+            session, [Account.AccountType.OPERATING_REVENUE]
+        ) == report_section_balances(session, [Account.AccountType.OPERATING_REVENUE])

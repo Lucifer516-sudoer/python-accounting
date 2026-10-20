@@ -12,11 +12,90 @@ Represents an abstraction of a financial statement according to IFRS/GAAP.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from strenum import StrEnum
+from sqlalchemy import select
 from sqlalchemy.orm.session import Session
 from python_accounting.config import config as configuration
 from python_accounting.models import Account
+from python_accounting.models.account import SectionBalances
+from python_accounting.utils.dates import get_dates
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.account import AccountTypeStub
+
+
+def section_balances(
+    session: "AccountingSession",
+    account_types: "list[AccountTypeStub]",
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    full_balance: bool = True,
+) -> SectionBalances:
+    """
+    Gets the opening, movement and closing balances of the accounts of the given section
+    (account types), organized by category.
+
+    Args:
+        session (Session): The accounting session to which the Account belongs.
+        account_types (`list` of `Account.AccountType`): The Account types
+            belonging to the section.
+        start_date (datetime): The earliest transaction date for Transaction amounts to be
+            included in the balance.
+        end_date (datetime): The latest transaction date for Transaction amounts to be included
+            in the balance.
+        full_balance (bool): Whether to include opening balance amounts in the balance.
+
+    Returns:
+        SectionBalances: A summary of the total opening, balance movement and closing
+        balance, which details of totals by Category and the Accounts contained in
+        each Category.
+            - opening (Decimal): The sum of opening balances of Accounts in the section.
+            - movement (Decimal): The movememt of the balances of Accounts in the section.
+            - closing (Decimal): The sum of opening closing of Accounts in the section.
+            - categories (dict): The Accounts belonging to the section separated by Category.
+    """
+    balances: SectionBalances = {
+        "opening": Decimal(0),
+        "movement": Decimal(0),
+        "closing": Decimal(0),
+        "categories": {},
+    }
+    start_date, end_date, period_start, _ = get_dates(session, start_date, end_date)
+
+    for account in session.scalars(
+        select(Account).filter(Account.account_type.in_(account_types))
+    ).all():
+        opening = account.opening_balance(
+            session, end_date.year
+        ) + account.balance_movement(session, period_start, start_date)
+        movement = account.balance_movement(session, start_date, end_date)
+        closing = opening + movement if full_balance else movement
+        display_movement = movement * -1  # cashflow statement display
+        if closing != 0 or display_movement != 0:
+            category_id, category_name = (
+                (0, Account.AccountType[account.account_type.name].value)
+                if account.category is None
+                else (account.category_id, account.category.name)
+            )
+            if category_name in balances["categories"]:
+                balances["categories"][category_name]["total"] += closing
+                balances["categories"][category_name]["accounts"].append(account)
+            else:
+                balances["categories"].update(
+                    {
+                        category_name: {
+                            "id": category_id,
+                            "total": closing,
+                            "accounts": [account],
+                        }
+                    }
+                )
+            balances["opening"] += opening
+            balances["movement"] += display_movement
+            balances["closing"] += closing
+    return balances
 
 
 class FinancialStatement:

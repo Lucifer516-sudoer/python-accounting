@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, aliased
-from sqlalchemy import String, ForeignKey, Enum, func, inspect, select, or_, exc
+from sqlalchemy import String, ForeignKey, Enum, func, inspect, or_, exc
 from python_accounting.models.recyclable import Recyclable
 from python_accounting.models.reporting_period import ReportingPeriod
 from python_accounting.mixins import IsolatingMixin, ClearingMixin
@@ -179,8 +179,6 @@ class Account(IsolatingMixin, Recyclable):
     """
 
     __mapper_args__ = {"polymorphic_identity": "Account"}
-    # Allow the bare (non-Mapped) dynamic-attribute annotations below (D-011)
-    __allow_unmapped__ = True
 
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)
     """(int): The primary key of the Account database record."""
@@ -202,16 +200,6 @@ class Account(IsolatingMixin, Recyclable):
     """(Currency): The Currency associated with the Account."""
     category: Mapped["Category | None"] = relationship(foreign_keys=[category_id])
     """(`Category`, optional): The Category to which the Account belongs."""
-
-    # Attributes set dynamically during statement/report generation (D-011)
-    opening: Decimal
-    """(Decimal): The opening balance set by Account.section_balances."""
-    closing: Decimal
-    """(Decimal): The closing balance set by Account.section_balances."""
-    movement: Decimal
-    """(Decimal): The period movement set by Account.section_balances."""
-    balance: Decimal
-    """(Decimal): The balance of the Account set by Category.account_balances."""
 
     def _get_account_code(self, session: "AccountingSession") -> int:
         current_count = int(
@@ -281,8 +269,11 @@ class Account(IsolatingMixin, Recyclable):
         full_balance: bool = True,
     ) -> SectionBalances:
         """
-        Gets the opening, movement and closing balances of the accounts of the given section
-        (account types), organized by category.
+        Deprecated alias for
+        python_accounting.reports.financial_statement.section_balances, kept for
+        backwards compatibility. New code should call the reports-layer function
+        directly; unlike earlier versions of this method, it does not stamp
+        opening/closing/movement attributes onto the Account objects.
 
         Args:
             session (Session): The accounting session to which the Account belongs.
@@ -298,51 +289,12 @@ class Account(IsolatingMixin, Recyclable):
             SectionBalances: A summary of the total opening, balance movement and closing
             balance, which details of totals by Category and the Accounts contained in
             each Category.
-                - opening (Decimal): The sum of opening balances of Accounts in the section.
-                - movement (Decimal): The movememt of the balances of Accounts in the section.
-                - closing (Decimal): The sum of opening closing of Accounts in the section.
-                - categories (dict): The Accounts belonging to the section separated by Category.
         """
-        balances: SectionBalances = {
-            "opening": Decimal(0),
-            "movement": Decimal(0),
-            "closing": Decimal(0),
-            "categories": {},
-        }
-        start_date, end_date, period_start, _ = get_dates(session, start_date, end_date)
+        from python_accounting.reports.financial_statement import section_balances
 
-        for account in session.scalars(
-            select(Account).filter(Account.account_type.in_(account_types))
-        ).all():
-            account.opening = account.opening_balance(
-                session, end_date.year
-            ) + account.balance_movement(session, period_start, start_date)
-            movement = account.balance_movement(session, start_date, end_date)
-            account.closing = account.opening + movement if full_balance else movement
-            account.movement = movement * -1  # cashflow statement display
-            if account.closing != 0 or account.movement != 0:
-                category_id, category_name = (
-                    (0, Account.AccountType[account.account_type.name].value)
-                    if account.category is None
-                    else (account.category_id, account.category.name)
-                )
-                if category_name in balances["categories"]:
-                    balances["categories"][category_name]["total"] += account.closing
-                    balances["categories"][category_name]["accounts"].append(account)
-                else:
-                    balances["categories"].update(
-                        {
-                            category_name: {
-                                "id": category_id,
-                                "total": account.closing,
-                                "accounts": [account],
-                            }
-                        }
-                    )
-                balances["opening"] += account.opening
-                balances["movement"] += account.movement
-                balances["closing"] += account.closing
-        return balances
+        return section_balances(
+            session, account_types, start_date, end_date, full_balance
+        )
 
     def opening_balance(
         self, session: "AccountingSession", year: int | None = None
