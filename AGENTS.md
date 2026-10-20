@@ -32,14 +32,18 @@ Transaction.balance stamp does NOT exist — collides with AssigningMixin.balanc
 shim uses `setattr(entry, "balance", ...)`), T4.0c `646da17` (section_balances moved to
 reports/financial_statement.py as a module-level function; Account.section_balances is
 a delegating alias; the four account stamps + `__allow_unmapped__` deleted from
-Account). Next up is **T4.1** (six mixins, isolating foreign_keys string-form probe
-first, D-007).
+Account). **T4.1 DONE (2026-10-20):** all six mixins 0/0 in both checkers.
+Commits: isolating `e7de7dd` (foreign_keys f-string form PROBED CLEAN — D-007
+resolved with zero suppressions), clearing `f842cc1` (one allowed test edit:
+`test_receivable_account_schedule` passed `amount=85.6` float pre-flush, which
+only worked because `cleared()` returned int 0; now `Decimal("85.6")`),
+assigning `75d6d56`, trading `d90e936`, buying+selling `e83cfed`.
 
 Progress: T0–T3 done — every model file is 0/0 in both checkers. T3 commits: base,
 recyclable, recycled, currency, user, account, category, tax, reporting_period,
 transaction, ledger `91ece95`, line_item `20922c7`, balance `1cda640`, assignment
 `e6fa5ce`, entity `5ab5291`. Phase 3.5 (T4.0a–T4.0c) done — see below. Current totals
-to beat: **mypy 214 / pyright 154 / pytest 143 / ruff format 92 files clean**. Per-file
+to beat: **mypy 172 / pyright 140 / pytest 143 / ruff format 92 files clean**. Per-file
 DoD: 0 errors in both checkers; totals strictly decrease.
 
 Hard-won lessons baked into the code (do not undo):
@@ -57,13 +61,18 @@ Hard-won lessons baked into the code (do not undo):
 - All quoted annotations (`Mapped["X"]`, `"tuple[Ledger, Ledger]"`) must be QUOTED —
   annotations evaluate at class-definition time and there is no
   `from __future__ import annotations` in this repo.
+- Cooperative `super()` in a plain mixin (trading.py): give the mixin a
+  TYPE_CHECKING-conditional base — `_CooperativeBase = Transaction` under
+  TYPE_CHECKING, `object` at runtime — so both checkers resolve the chained
+  `super().validate()` and host methods while the runtime MRO stays byte-identical.
+  Full suite green proves mapper config is unaffected. See `mixins/trading.py`.
 - zsh eats backticks in `git commit -m` messages (command substitution). Use single
   quotes or a heredoc.
 
-Next up: T4.1 six mixins (isolating `foreign_keys` string-form probe first,
-D-007), T4.2 session layer (**user checkpoint pending: `delete -> None`**, D-009),
-T4.3 dead-code removal, T4.4b `contribution()` test-first fix (D-010 — the precedence
-bug is deliberately still present, wrapped in `Decimal(...)` with a NOTE comment).
+Next up: T4.2 session layer (**user checkpoint pending: `delete -> None`**, D-009),
+T4.3 dead-code removal, T4.4a2 money seam (`utils/money.py`, D-016 §7), T4.4b
+`contribution()` test-first fix (D-010 — the precedence bug is deliberately still
+present, wrapped in `Decimal(...)` with a NOTE comment).
 
 ## Setup — this will bite you
 
