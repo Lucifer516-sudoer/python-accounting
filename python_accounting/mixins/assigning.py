@@ -12,7 +12,16 @@ Provides functionality to assignable Transactions for clearing clearable Transac
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING, cast
 from sqlalchemy import func, select
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Mapped
+
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.mixins.clearing import ClearingMixin
+    from python_accounting.models.account import Account
+    from python_accounting.models.assignment import Assignment
 
 
 class AssigningMixin:
@@ -22,7 +31,17 @@ class AssigningMixin:
 
     """
 
-    def balance(self, session) -> Decimal:
+    if TYPE_CHECKING:
+        # Host-class attributes this mixin relies on. Declared under
+        # TYPE_CHECKING only: at runtime the concrete classes (Transaction STI
+        # subclasses) provide them via their own mappings/properties, and the
+        # skipped block keeps SQLAlchemy from seeing duplicate declarations.
+        id: Mapped[int]
+        entity_id: Mapped[int]
+        account: Mapped["Account"]
+        amount: Decimal
+
+    def balance(self, session: "AccountingSession") -> Decimal:
         """
         Gets how much of the Transaction amount is remaining available for assigning
             to clearable Transactions.
@@ -39,7 +58,7 @@ class AssigningMixin:
             Assignment,
         )
 
-        return self.amount - (
+        return self.amount - Decimal(
             (
                 session.query(func.sum(Assignment.amount).label("amount"))
                 .filter(Assignment.transaction_id == self.id)
@@ -48,7 +67,7 @@ class AssigningMixin:
             or 0
         )
 
-    def assignments(self, session) -> list:
+    def assignments(self, session: "AccountingSession") -> list["Assignment"]:
         """
         Gets the assignments made on the Transaction.
 
@@ -62,11 +81,13 @@ class AssigningMixin:
             Assignment,
         )
 
-        return session.scalars(
-            select(Assignment).filter(Assignment.transaction_id == self.id)
-        ).all()
+        return list(
+            session.scalars(
+                select(Assignment).filter(Assignment.transaction_id == self.id)
+            ).all()
+        )
 
-    def unassign(self, session) -> None:
+    def unassign(self, session: "AccountingSession") -> None:
         """
         Removes all assignments made to this Transaction.
 
@@ -78,7 +99,7 @@ class AssigningMixin:
         """
         _ = [session.delete(a) for a in self.assignments(session)]
 
-    def bulk_assign(self, session) -> None:
+    def bulk_assign(self, session: "AccountingSession") -> None:
         """
         Assigns the Transaction's amount to all outstanding clearable Transactions for the
         main account on a FIFO basis.
@@ -102,7 +123,13 @@ class AssigningMixin:
             if balance == 0:
                 break
 
-            uncleared_amount = clearable.amount - clearable.cleared(session)
+            # Clearable schedule rows are Transaction STI subclasses carrying
+            # ClearingMixin or Balance (which has it too), so cleared() is
+            # available on either union member (same precedent as
+            # models/assignment.py's isinstance assert).
+            uncleared_amount = clearable.amount - cast(
+                "ClearingMixin", clearable
+            ).cleared(session)
             if uncleared_amount == 0:
                 continue
 
