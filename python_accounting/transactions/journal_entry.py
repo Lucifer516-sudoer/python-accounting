@@ -11,7 +11,7 @@ This is the most powerful Transaction in the entire system, capable of
 
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 from python_accounting.models import Transaction
 from python_accounting.mixins import AssigningMixin, ClearingMixin
 from python_accounting.exceptions import (

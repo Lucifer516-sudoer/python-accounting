@@ -60,8 +60,8 @@ class EventListenersMixin(AccountingFunctionsMixin):
                 orm.with_loader_criteria(
                     Recyclable,
                     lambda cls: and_(
-                        cls.deleted_at == None,  # noqa: E711
-                        cls.destroyed_at == None,  # noqa: E711
+                        cls.deleted_at == None,
+                        cls.destroyed_at == None,
                     ),
                     include_aliases=True,
                 )

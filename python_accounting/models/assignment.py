@@ -13,7 +13,7 @@ Represents an matching between Transactions that have an opposite effect on an A
 import importlib
 from decimal import Decimal
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, func, String
 from sqlalchemy.types import DECIMAL
@@ -36,6 +36,7 @@ from python_accounting.exceptions import (
 
 if TYPE_CHECKING:
     from python_accounting.database.session import AccountingSession
+    from python_accounting.models.transaction import TransactionTypeStub
 
 
 class Assignment(IsolatingMixin, Base):
@@ -43,7 +44,7 @@ class Assignment(IsolatingMixin, Base):
 
     __tablename__ = "assignment"
 
-    clearables = [
+    clearables: ClassVar[list["TransactionTypeStub"]] = [
         Transaction.TransactionType[t]
         for t in config.transactions["clearables"]["types"]
     ]
@@ -52,7 +53,7 @@ class Assignment(IsolatingMixin, Base):
     that can be cleared by assignable Transactions.
     """
 
-    assignables = [
+    assignables: ClassVar[list["TransactionTypeStub"]] = [
         Transaction.TransactionType[t]
         for t in config.transactions["assignables"]["types"]
     ]

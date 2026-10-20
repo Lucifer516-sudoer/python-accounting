@@ -664,11 +664,11 @@ def test_transaction_posting(session, entity, currency):
     session.flush()
 
     transaction.line_items.add(line_item1)
-    assert transaction.amount == Decimal(82.5)
+    assert transaction.amount == Decimal("82.5")
 
     transaction.post(session)
 
-    assert transaction.amount == Decimal(82.5)
+    assert transaction.amount == Decimal("82.5")
     assert (
         session.query(func.sum(Ledger.amount).label("amount"))
         .filter(Ledger.entity_id == transaction.entity_id)

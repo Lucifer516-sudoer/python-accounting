@@ -14,7 +14,7 @@ import hashlib
 from datetime import datetime
 from copy import deepcopy
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, TYPE_CHECKING, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum, select
 from sqlalchemy.types import DECIMAL
@@ -96,7 +96,7 @@ class Ledger(IsolatingMixin, Recyclable):
          {self.amount}"""
 
     @staticmethod
-    def _allocate_amount(  # noqa: PLR0913, PLR0917
+    def _allocate_amount(  # noqa: PLR0913
         session: "AccountingSession",
         post: int,
         amount: Decimal,

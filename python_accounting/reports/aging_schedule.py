@@ -94,14 +94,14 @@ class AgingSchedule:
                 self.accounts.append(account)
 
     def __repr__(self) -> str:
-        return f"{self.account_type} Aging Schedule as at {str(self.end_date)}"
+        return f"{self.account_type} Aging Schedule as at {self.end_date!s}"
 
     def _allocate_balances(self, rows: "list[ScheduleRow]", account: Account) -> None:
         for row in rows:
-            bracket = [
+            bracket = next(
                 bracket
                 for bracket, max_age in self.brackets.items()
                 if row.age <= max_age
-            ][0]
+            )
             self.balances[bracket] += row.uncleared_amount
             account.balances[bracket] += row.uncleared_amount

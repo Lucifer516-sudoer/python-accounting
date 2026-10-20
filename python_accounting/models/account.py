@@ -184,7 +184,7 @@ class Account(IsolatingMixin, Recyclable):
     """(StrEnum): Account Types as defined by IFRS and GAAP."""
 
     # Account Types that can be used in Purchasing Transactions
-    purchasables = [
+    purchasables: ClassVar[list["AccountTypeStub"]] = [
         account_type_enum[t] for t in config.accounts["purchasables"]["types"]
     ]
     """

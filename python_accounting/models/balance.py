@@ -12,7 +12,7 @@ Represents the amount outstanding on a Transaction from a previous Reporting Per
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, ClassVar, TypedDict, cast
+from typing import ClassVar, TYPE_CHECKING, TypedDict, cast
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum, select
 from sqlalchemy.types import DECIMAL

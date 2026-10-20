@@ -11,7 +11,7 @@ Represents the individual entries in a Transaction that will eventually be poste
 """
 
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import ForeignKey, Boolean, func, String
 from sqlalchemy.types import DECIMAL

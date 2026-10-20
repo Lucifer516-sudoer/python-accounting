@@ -10,7 +10,7 @@ per-column contract that the ``| None`` annotation pass must not move.
 Update this file only as part of a deliberate, recorded schema change.
 """
 
-import python_accounting.transactions  # noqa: F401  (register polymorphic subclasses)
+import python_accounting.transactions  # noqa: F401
 from sqlalchemy.orm import configure_mappers
 
 from python_accounting.models import Base

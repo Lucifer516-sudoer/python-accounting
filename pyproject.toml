@@ -141,6 +141,11 @@ select = [
            # fully annotated, so this gate keeps it that way. ANN401 is
            # ignored globally (see below); the tests directory is exempted
            # from ANN entirely (see per-file-ignores).
+    "RUF", # ruff-specific rules. RUF012 is ignored globally (see below);
+           # the rest (unused noqa hygiene, Decimal-from-float, explicit
+           # f-string conversions) are clean.
+    "PERF",# perflint. Zero findings at adoption; guards against accidental
+           # O(n) list rebuilds and unrolled loops in hot paths.
 ]
 # Every entry here is a deliberate decision, not a backlog. Adding one requires
 # a comment saying why.
@@ -188,6 +193,16 @@ ignore = [
     # These are the documented seams of D-008/D-009, not missing annotations;
     # every other ANN rule still applies.
     "ANN401",
+    # RUF012 demands `ClassVar` on mutable class defaults, but SQLAlchemy's
+    # `DeclarativeBase` declares `__mapper_args__` as an instance variable in
+    # its own type stubs, so annotating the directive `ClassVar[...]` is
+    # rejected by BOTH mypy ("Cannot override instance variable ... with
+    # class variable") and pyright ("Class variable overrides instance
+    # variable"). The rule is structurally incompatible with the declarative
+    # directive pattern (`__mapper_args__` appears in every model); the
+    # config-driven class lists (purchasables/clearables/assignables) carry
+    # their ClassVar annotations anyway.
+    "RUF012",
 ]
 
 [tool.ruff.lint.per-file-ignores]
