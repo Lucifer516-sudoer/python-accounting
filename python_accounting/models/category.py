@@ -11,7 +11,8 @@ Represents a Category, a grouping of Accounts of the same type.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from decimal import Decimal
+from typing import TYPE_CHECKING, TypedDict
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Enum
@@ -22,6 +23,15 @@ from python_accounting.utils.dates import get_dates
 
 if TYPE_CHECKING:
     from python_accounting.database.session import AccountingSession
+
+
+class CategoryBalances(TypedDict):
+    """Shape of the summary returned by :meth:`Category.account_balances`."""
+
+    total: Decimal
+    """(Decimal): The total of the closing balances of the Category accounts."""
+    accounts: list["Account"]
+    """(list of Account): The Accounts belonging to the Category."""
 
 
 class Category(IsolatingMixin, Recyclable):
@@ -68,7 +78,7 @@ class Category(IsolatingMixin, Recyclable):
 
     def account_balances(
         self, session: "AccountingSession", end_date: datetime | None = None
-    ) -> dict[str, Any]:
+    ) -> CategoryBalances:
         """
         Returns the Accounts belonging to the Category and their balances.
 
@@ -77,14 +87,14 @@ class Category(IsolatingMixin, Recyclable):
             end_date (datetime): The latest transaction date for Transaction amounts to be included in the Account balances.
 
         Returns:
-            dict: With a A summary of the total of the Account balances of the together with a list
+            CategoryBalances: With a A summary of the total of the Account balances of the together with a list
             of the Accounts themselves.
                 - total (Decimal): The total of the closing balances of the Category accounts as at the end date.
                 - accounts (list): The Accounts belonging to the Category.
         """
         _, end_date, _, _ = get_dates(session, None, end_date)
 
-        balances: dict[str, Any] = {"total": 0, "accounts": []}
+        balances: CategoryBalances = {"total": Decimal(0), "accounts": []}
 
         for account in self.accounts:
             account.balance = account.closing_balance(session, end_date)

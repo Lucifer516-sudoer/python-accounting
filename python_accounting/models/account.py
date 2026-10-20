@@ -12,7 +12,7 @@ Represents an Account, the basic unit of accounting that groups the transactions
 import warnings
 from decimal import Decimal
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, aliased
 from sqlalchemy import String, ForeignKey, Enum, func, inspect, select, or_, exc
@@ -73,6 +73,30 @@ account_type_enum: "type[AccountType]" = cast(
         "AccountType", [(k, v["label"]) for k, v in config.accounts["types"].items()]
     ),
 )
+
+
+class SectionCategory(TypedDict):
+    """Shape of one category entry in :meth:`Account.section_balances`."""
+
+    id: int
+    """(int): The Category id, or 0 for an uncategorised Account."""
+    total: Decimal
+    """(Decimal): The sum of the closing balances of the Category's Accounts."""
+    accounts: list["Account"]
+    """(list of Account): The Accounts belonging to the Category."""
+
+
+class SectionBalances(TypedDict):
+    """Shape of the summary returned by :meth:`Account.section_balances`."""
+
+    opening: Decimal
+    """(Decimal): The sum of opening balances of Accounts in the section."""
+    movement: Decimal
+    """(Decimal): The movement of the balances of Accounts in the section."""
+    closing: Decimal
+    """(Decimal): The sum of the closing balances of Accounts in the section."""
+    categories: dict[str, SectionCategory]
+    """(dict): The Accounts belonging to the section separated by Category."""
 
 
 class Account(IsolatingMixin, Recyclable):
@@ -194,7 +218,7 @@ class Account(IsolatingMixin, Recyclable):
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         full_balance: bool = True,
-    ) -> dict[str, Any]:
+    ) -> SectionBalances:
         """
         Gets the opening, movement and closing balances of the accounts of the given section
         (account types), organized by category.
@@ -210,17 +234,18 @@ class Account(IsolatingMixin, Recyclable):
             full_balance (bool): Whether to include opening balance amounts in the balance.
 
         Returns:
-            dict: A summary of the total opening, balance movement and closing balance, which
-            details of totals by Category and the Accounts contained in each Category.
+            SectionBalances: A summary of the total opening, balance movement and closing
+            balance, which details of totals by Category and the Accounts contained in
+            each Category.
                 - opening (Decimal): The sum of opening balances of Accounts in the section.
                 - movement (Decimal): The movememt of the balances of Accounts in the section.
                 - closing (Decimal): The sum of opening closing of Accounts in the section.
                 - categories (dict): The Accounts belonging to the section separated by Category.
         """
-        balances: dict[str, Any] = {
-            "opening": 0,
-            "movement": 0,
-            "closing": 0,
+        balances: SectionBalances = {
+            "opening": Decimal(0),
+            "movement": Decimal(0),
+            "closing": Decimal(0),
             "categories": {},
         }
         start_date, end_date, period_start, _ = get_dates(session, start_date, end_date)

@@ -12,7 +12,7 @@ Represents a financial Transaction.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 from strenum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy import (
@@ -79,6 +79,26 @@ transaction_type_enum: "type[TransactionType]" = cast(
         [(k, v["label"]) for k, v in config.transactions["types"].items()],
     ),
 )
+
+
+class TaxLine(TypedDict):
+    """Shape of one tax entry in :attr:`Transaction.tax`."""
+
+    name: str
+    """(str): The name of the Tax."""
+    rate: str
+    """(str): The rate of the Tax, as a percentage string."""
+    amount: Decimal
+    """(Decimal): The total amount of the Tax applied to the Transaction."""
+
+
+class TransactionTax(TypedDict):
+    """Shape of the summary returned by :attr:`Transaction.tax`."""
+
+    total: Decimal
+    """(Decimal): The total tax applied to the Transaction."""
+    taxes: dict[str, TaxLine]
+    """(dict): The taxes applied to the Transaction, keyed by tax code."""
 
 
 class Transaction(IsolatingMixin, Recyclable):
@@ -204,13 +224,13 @@ class Transaction(IsolatingMixin, Recyclable):
         )
 
     @property
-    def tax(self) -> dict[str, Any]:
+    def tax(self) -> TransactionTax:
         """
         The taxes that have been applied to the transaction.
             - taxes (dict): The taxes applied to the Transaction and their amounts.
             - amount (str): The total tax applied to the Transaction.
         """
-        taxes: dict[str, Any] = {}
+        taxes: dict[str, TaxLine] = {}
         total: Decimal = Decimal(0)
         for line_item in iter(self.line_items):
             if line_item.tax_id:

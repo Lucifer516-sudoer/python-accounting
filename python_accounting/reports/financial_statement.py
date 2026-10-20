@@ -11,6 +11,8 @@ Represents an abstraction of a financial statement according to IFRS/GAAP.
 """
 
 from datetime import datetime
+from decimal import Decimal
+from typing import Any
 from strenum import StrEnum
 from sqlalchemy.orm.session import Session
 from python_accounting.config import config as configuration
@@ -62,9 +64,12 @@ class FinancialStatement:
 
         self.accounts = {k: {} for k in section_names}
         """(dict): The Accounts in the sections of the report, by Account category."""
-        self.balances = {k: {} for k in section_names}
+        # Keys are config-driven section names plus the synthetic "debit"/"credit"
+        # scalars; values are label-keyed dicts or Decimals — heterogeneous by
+        # design (D-016), so the honest annotation is a plain dict.
+        self.balances: dict[str, Any] = {k: {} for k in section_names}
         """(dict): The total balances of the Accounts in the sections of the report, by Account category."""
-        self.totals = dict.fromkeys(section_names, 0)
+        self.totals: dict[str, Decimal] = dict.fromkeys(section_names, Decimal(0))
         """(dict): The Total balances of Accounts in the sections of the report."""
         self.result_amounts = {}
         """(dict): The amounts results of the report."""
