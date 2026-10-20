@@ -62,6 +62,33 @@ verification. From T0.2 onward, the schema snapshot test must be green in every 
   touched. Verify per file: its checker count is zero; total counts strictly decrease;
   pytest + snapshot green.
 
+## Phase 3.5 — Account deepening (architecture review 2026-10-20, D-016)
+
+Inserted before T4.1 per user decision: the mixins pass annotates the settled shape.
+Fact dossier: `/tmp/opencode/deepening-dossier.md`.
+
+- **T4.0a** Candidate 2 (typed dicts): `SectionBalances` (account.py), `CategoryBalances`
+  (category.py), `TransactionTax` (transaction.py) as TypedDicts with byte-identical keys;
+  `Decimal(0)` seeding in new accumulator annotations. `FinancialStatement.balances`
+  explicitly stays a plain dict (keys are config data). Verify: existing tests green
+  untouched; checker counts for the three files zero. Commit `Refactor: typed result
+  dicts for account balances and transaction tax`.
+- **T4.0b** Candidate 1 (split): `schedule_outstanding()` / `statement_running()` on
+  `Account` returning `OutstandingSchedule`/`AccountStatement` with frozen
+  `ScheduleRow`/`StatementRow`; legacy `statement()` becomes the restamping shim;
+  `AgingSchedule` and `bulk_assign` migrate to consume rows. Tester writes the new-seam
+  tests first (`tests/test_account_statement.py` or similar: new interface + alias
+  equivalence incl. a Balance row in schedule mode). Verify: full pytest green with zero
+  existing-test edits; checker counts for account.py/aging_schedule.py/assigning.py zero.
+  Commit `Refactor: split Account.statement into typed schedule/statement halves`.
+- **T4.0c** Move `section_balances` to the reports layer (next to `FinancialStatement`);
+  `Account.section_balances` becomes the delegating alias; delete the four account-stamp
+  annotations (account.py:122–129) and `__allow_unmapped__` (account.py:98); CHANGELOG
+  break line drafted. Verify: schema snapshot green (no DDL change), full pytest,
+  `rg "opening|closing|movement" python_accounting/models/account.py` audit shows no
+  stamping remains. Commit `Refactor: section_balances to reports layer, retire account
+  stamps`.
+
 ## Phase 4 — Mixins + database layer
 
 - **T4.1** Six mixins (`isolating`, `trading`, `buying`, `selling`, `clearing`,
@@ -79,8 +106,14 @@ verification. From T0.2 onward, the schema snapshot test must be green in every 
   `Chore: remove dead database_init and import-time engine`.
 - **T4.4** Defect fixes, one commit each:
   a) `Ledger.get_hash -> str` + corrected docstring;
+  a2) Money seam (architecture review candidate 4, sequenced here per D-016 §7):
+  `utils/money.py` with `line_item_tax_amount(line_item) -> Decimal` (dedupes the three
+  tax spellings in transaction.py:217–219 and ledger.py:209–213) and
+  `signed_sum(query, debit_expr, credit_expr) -> Decimal` (absorbs the five
+  debit-minus-credit blocks in account.py, transaction.py, clearing.py, assigning.py).
+  Verify: existing tests green untouched; hash-chain row shape untouched; Decimal-only.
   b) `contribution()` — tester writes the dual-sided failing test first, then fix
-  `(debit or 0) - (credit or 0)` (D-010);
+  `(debit or 0) - (credit or 0)` (D-010) — lands ON `signed_sum()` from a2;
   c) `Category` module docstring; `transactions/__init__.py` header typo.
   (`utils/dates.py` and `engine.py` headers were handled in T2.3/T4.3.)
 

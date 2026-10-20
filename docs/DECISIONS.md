@@ -323,6 +323,69 @@ Baselines this effort must drive to zero, measured 2026-10-16:
   (`account_type: "AccountType"`); value positions (`Account.AccountType.BANK`)
   stay untouched. First fix of this kind: `reports/aging_schedule.py`.
 
+### D-016 — Account deepening: result types replace stamped attributes and string-keyed dicts
+
+**Status:** accepted (grill rounds 1–2, user approved all defaults) · **Date:** 2026-10-20
+
+**Context.** Architecture review (2026-10-20, report at
+`/tmp/opencode/architecture-review-20261020-090222.html`, fact dossier at
+`/tmp/opencode/deepening-dossier.md`) found the dominant friction: data contracts between
+`Account` and its six consumers expressed as stamped attributes and string-keyed dicts.
+`Account.statement()` is 157 lines forking on a `schedule` flag into two disjoint reports;
+`section_balances()` is a reports concern living on the model. Evidence that made the
+aggressive option safe: **no downstream consumer exists on disk** (`python-profit` absent,
+`kanakku` has zero references), and the four account stamps (`opening`/`closing`/
+`movement`/`balance`) have **zero readers** outside the stamping code itself.
+
+**Decisions (each grill-approved):**
+
+1. **Split, don't fork.** `statement()` splits into `schedule_outstanding()` (aging half,
+   RECEIVABLE/PAYABLE only) and `statement_running()` (running-balance half), both staying
+   as `Account` methods — a models→reports seam here would create a second import
+   inversion like the fragile `models/balance.py:34` one. `section_balances()` moves to
+   the reports layer next to `FinancialStatement` (its 4 callers are all reports);
+   `Account.section_balances` remains as a delegating alias.
+2. **Result types.** `OutstandingSchedule` (rows: `ScheduleRow(entry: Transaction |
+   Balance, cleared_amount, uncleared_amount, age)`) and `AccountStatement` (rows:
+   `StatementRow(entry: Transaction, balance, debit, credit)`) are frozen dataclasses —
+   genuinely new shapes. `SectionBalances`, `CategoryBalances`, `TransactionTax` are
+   TypedDicts — dict keys stay byte-identical so existing tests asserting
+   `result["opening"]` etc. stay green untouched. `FinancialStatement.balances` stays a
+   plain dict: its keys are config-driven *data* (section names, labels, heterogeneous
+   `"debit"`/`"credit"` scalars); a TypedDict would lie. Naming follows the
+   `OpeningTrialBalance` precedent (plain nouns, no `Result` suffix).
+3. **Legacy aliases = single implementation + shim.** `statement()` becomes a ~10-line
+   dispatcher: calls the new method, restamps each row's computed values onto `row.entry`
+   (transaction-level stamps only), returns the legacy dict shape. The old loop body is
+   not duplicated. `section_balances` alias delegates without stamping.
+4. **Account stamps retired entirely.** The new implementations accumulate locally and
+   never stamp; the four D-011 bare annotations (`account.py:122–129`) and
+   `__allow_unmapped__` (account.py:98 — needed solely for those four) are deleted.
+   CHANGELOG break line under 2.0.0. Transaction-level stamps (`debit`/`credit`/
+   `cleared_amount`/`uncleared_amount`/`age`) STAY declared and the shim keeps restamping
+   them — 30+ test assertions read them.
+5. **`Decimal(0)` seeding.** All new accumulators seed `Decimal(0)` (today they start as
+   `int 0`; `0 == Decimal(0)` keeps tests green; `OpeningTrialBalance` already does this).
+6. **Out of scope.** `AgingSchedule`'s own `account.balances` bracket-dict stamping stays
+   (report's documented output shape, tests pin it); AgingSchedule only migrates to
+   consume `ScheduleRow.age`/`.uncleared_amount`. `bulk_assign` migrates to consume the
+   schedule rows from day one.
+7. **Sequencing.** Lands as PLAN T4.0a–T4.0c, BEFORE T4.1 (six mixins annotate the
+   settled shape). Candidate 4 (money seam, `utils/money.py`) is sequenced as T4.4a2,
+   just before the T4.4b `contribution()` fix so D-010 lands on `signed_sum()`.
+8. **Tests.** ~2 new test files proving the new seam + alias delegation; zero existing
+   test edits unless a test breaks.
+
+**Load-bearing constraints honored:** no mapped columns added (D-011 mechanics untouched
+beyond deleting Account's four annotations); schedule-mode rows keep duck-typing
+`Transaction | Balance` (Balance rows are opening-balance entries;
+`test_schedule_clearances.py:66` asserts a Balance appears); hash chain, `E711` sites,
+import order, `Decimal`-only money all untouched.
+
+**Consequences:** the implicit contract between `Account` and its consumers becomes
+explicit, typed interfaces; mypy/pyright can verify what only dict-key folklore knew
+before. Vocabulary recorded in `GLOSSARY.md`.
+
 ---
 
 ## Probe index (scratch, `/tmp/opencode/`)

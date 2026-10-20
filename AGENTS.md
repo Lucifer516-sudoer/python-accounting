@@ -5,7 +5,7 @@ Nov 2023 – Mar 2024; only lightly maintained since. Sibling repo `python-profi
 
 ## 2.0 remodel status (updated 2026-10-20)
 
-The contract is `docs/SPEC.md` (acceptance A1–A11) + `docs/DECISIONS.md` (D-001…D-015)
+The contract is `docs/SPEC.md` (acceptance A1–A11) + `docs/DECISIONS.md` (D-001…D-016)
 + `docs/PLAN.md` (T0–T9). Read all three before touching anything.
 
 **One agent session at a time on this repo.** On 2026-10-17 two sessions raced on the
@@ -16,8 +16,15 @@ Before starting work, confirm no other session is live; before committing, re-ch
 **Plan reorder (user-approved 2026-10-20):** Phase 9 (docs site, T9.1–T9.3) was pulled
 ahead of T4.1. The MkDocs site is live (`mkdocs.yml`, Material + mkdocstrings;
 `uv run mkdocs build --strict` is zero-warning; Sphinx artifacts deleted;
-`.readthedocs.yaml` migrated). T9.4 (release prep) stays at the end. Next up is T4.1
-(six mixins) as originally planned — the API reference self-heals as annotations land.
+`.readthedocs.yaml` migrated). T9.4 (release prep) stays at the end.
+
+**Account deepening (user-approved 2026-10-20, D-016):** architecture review picked
+Candidate 1 (split `Account.statement`, retire account stamps) with Candidate 2 (typed
+dicts) riding along, landing as PLAN T4.0a–T4.0c BEFORE T4.1 — the mixins pass annotates
+the settled shape. Candidate 4 (money seam, `utils/money.py`) is sequenced as T4.4a2,
+just before the T4.4b `contribution()` fix so D-010 lands on `signed_sum()`. Fact
+dossier: `/tmp/opencode/deepening-dossier.md`; vocabulary: `GLOSSARY.md`. Next up is
+T4.0a.
 
 Progress: T0–T3 done — every model file is 0/0 in both checkers. T3 commits: base,
 recyclable, recycled, currency, user, account, category, tax, reporting_period,
