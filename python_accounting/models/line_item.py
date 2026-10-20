@@ -103,7 +103,7 @@ class LineItem(IsolatingMixin, Recyclable):
         Validates the Line Item properties.
 
         Args:
-            session (Session): The accounting session to which the Line Item belongs.
+            _ (Session): The accounting session to which the Line Item belongs.
 
         Raises:
             NegativeValueError: If the Line Item amount or quantity is less than 0.

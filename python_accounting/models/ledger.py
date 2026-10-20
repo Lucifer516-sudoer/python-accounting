@@ -257,8 +257,8 @@ class Ledger(IsolatingMixin, Recyclable):
         Calculate the hash of the Ledger.
 
         Args:
-            connection (Connection): The database connection of the accounting session
-            to which the Ledger belongs.
+            connection (Connection): The database connection of the accounting
+                session to which the Ledger belongs.
 
         Returns:
             str: The hash of the Ledger.

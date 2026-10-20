@@ -52,7 +52,7 @@ class Category(IsolatingMixin, Recyclable):
         Validates the Category properties.
 
         Args:
-            session (Session): The accounting session to which the Category belongs.
+            _ (Session): The accounting session to which the Category belongs.
 
         Raises:
             InvalidAccountTypeError: If the category account type is not one of Account.AccountType.

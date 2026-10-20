@@ -21,6 +21,9 @@ repos:
       - id: check-merge-conflict
       - id: check-case-conflict
       - id: check-yaml
+        # mkdocs.yml uses `!!python/name:` tags that mkdocs resolves at
+        # runtime; pyyaml (which this hook uses) cannot construct them.
+        exclude: ^mkdocs\.yml$
       - id: check-toml
       - id: check-json
       - id: check-added-large-files

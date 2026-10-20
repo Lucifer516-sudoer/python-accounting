@@ -40,7 +40,7 @@ def get_session(engine) -> "AccountingSession":
     Construct the accounting session.
 
     Args:
-        engine: The database engine to create a session for.
+        engine (Engine): The database engine to create a session for.
 
     Returns:
         AccountingSession.
