@@ -22,6 +22,7 @@ from strenum import StrEnum
 from python_accounting.mixins import IsolatingMixin
 from python_accounting.config import config
 from python_accounting.models import Recyclable, Balance, Transaction
+from python_accounting.utils.money import line_item_posted_tax_amount
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
@@ -206,19 +207,20 @@ class Ledger(IsolatingMixin, Recyclable):
 
             if line_item.tax_id:
                 tax_post, tax_folio = deepcopy(post), deepcopy(folio)
-                tax_post.amount = tax_folio.amount = (
-                    amount - (amount / (1 + line_item.tax.rate / 100))
-                    if line_item.tax_inclusive
-                    else amount * line_item.tax.rate / 100
+                tax_post.amount = tax_folio.amount = line_item_posted_tax_amount(
+                    line_item
                 )
                 tax_post.post_account_id = tax_folio.folio_account_id = (
                     line_item.account_id
                     if line_item.tax_inclusive
                     else transaction.account_id
                 )
-                tax_post.folio_account_id = tax_folio.post_account_id = (
-                    line_item.tax.account_id
-                )
+                # Tax.validate requires an account for any tax that charges
+                # (rate > 0), and a tax row is only posted for line items
+                # carrying a tax, so the account id is present here.
+                tax_account_id = line_item.tax.account_id
+                assert tax_account_id is not None
+                tax_post.folio_account_id = tax_folio.post_account_id = tax_account_id
 
                 session.add(tax_post)
                 session.flush()

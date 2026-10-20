@@ -37,6 +37,7 @@ from python_accounting.exceptions import (
     InvalidTransactionTypeError,
 )
 from python_accounting.models import Recyclable, Account, ReportingPeriod, LineItem
+from python_accounting.utils.money import line_item_tax_amount
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -246,10 +247,8 @@ class Transaction(IsolatingMixin, Recyclable):
         total: Decimal = Decimal(0)
         for line_item in iter(self.line_items):
             if line_item.tax_id:
-                amount = (
-                    line_item.tax.rate * line_item.amount * line_item.quantity / 100
-                )
-                total += Decimal(amount)
+                amount = line_item_tax_amount(line_item)
+                total += amount
                 if line_item.tax.code in taxes:
                     taxes[line_item.tax.code]["amount"] += amount
                 else:
@@ -277,7 +276,7 @@ class Transaction(IsolatingMixin, Recyclable):
             sum(
                 line_item.amount * line_item.quantity
                 + (
-                    (line_item.amount * line_item.quantity * line_item.tax.rate / 100)
+                    line_item_tax_amount(line_item)
                     if line_item.tax_id and not line_item.tax_inclusive
                     else 0
                 )

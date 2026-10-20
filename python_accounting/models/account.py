@@ -27,6 +27,7 @@ from python_accounting.exceptions import (
     HangingTransactionsError,
 )
 from python_accounting.utils.dates import get_dates
+from python_accounting.utils.money import signed_sum
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -260,13 +261,11 @@ class Account(IsolatingMixin, Recyclable):
             .filter(Ledger.post_account_id == self.id)
             .filter(Ledger.entity_id == self.entity_id)
         )
-        debit = (
-            query.filter(Ledger.entry_type == Balance.BalanceType.DEBIT).scalar() or 0
+        return signed_sum(
+            query,
+            Ledger.entry_type == Balance.BalanceType.DEBIT,
+            Ledger.entry_type == Balance.BalanceType.CREDIT,
         )
-        credit = (
-            query.filter(Ledger.entry_type == Balance.BalanceType.CREDIT).scalar() or 0
-        )
-        return Decimal(debit) - Decimal(credit)
 
     @staticmethod
     def section_balances(
@@ -336,15 +335,11 @@ class Account(IsolatingMixin, Recyclable):
             .filter(Balance.account_id == self.id)
             .filter(Balance.entity_id == self.entity_id)
         )
-        debit = (
-            query.filter(Balance.balance_type == Balance.BalanceType.DEBIT).scalar()
-            or 0
+        return signed_sum(
+            query,
+            Balance.balance_type == Balance.BalanceType.DEBIT,
+            Balance.balance_type == Balance.BalanceType.CREDIT,
         )
-        credit = (
-            query.filter(Balance.balance_type == Balance.BalanceType.CREDIT).scalar()
-            or 0
-        )
-        return Decimal(debit) - Decimal(credit)
 
     def closing_balance(
         self, session: "AccountingSession", end_date: datetime | None = None
