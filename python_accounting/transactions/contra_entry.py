@@ -27,9 +27,9 @@ class ContraEntry(TradingMixin, Transaction):
             Account,
         )
 
-        self.line_item_types: list = [Account.AccountType.BANK]
-        self.main_account_types: list = [Account.AccountType.BANK]
-        self.account_type_map: dict = {
+        self.line_item_types = [Account.AccountType.BANK]
+        self.main_account_types = [Account.AccountType.BANK]
+        self.account_type_map = {
             "ContraEntry": Account.AccountType.BANK,
         }
 

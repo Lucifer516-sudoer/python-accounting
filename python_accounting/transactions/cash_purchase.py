@@ -27,7 +27,7 @@ class CashPurchase(BuyingMixin, Transaction):
             Account,
         )
 
-        self.main_account_types: list = [
+        self.main_account_types = [
             Account.AccountType.BANK,
         ]
         self.credited = True

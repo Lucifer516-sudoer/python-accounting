@@ -11,7 +11,7 @@ This is the most powerful Transaction in the entire system, capable of
 
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from python_accounting.models import Transaction
 from python_accounting.mixins import AssigningMixin, ClearingMixin
 from python_accounting.exceptions import (
@@ -19,6 +19,10 @@ from python_accounting.exceptions import (
     UnbalancedTransactionError,
     InvalidTaxChargeError,
 )
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.line_item import LineItem
 
 
 class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
@@ -33,11 +37,11 @@ class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
         self.credited = True
         super().__init__(**kw)
 
-    def _validate_subclass_line_items(self, line_item):
+    def _validate_subclass_line_items(self, line_item: "LineItem") -> None:
         if self.compound and line_item.tax_id:
             raise InvalidTaxChargeError(f"Compound {self.__class__.__name__}")
 
-    def get_compound_entries(self) -> tuple:
+    def get_compound_entries(self) -> "tuple[Any, Any]":
         """
         Prepare the compound entries for the Transaction
 
@@ -48,7 +52,7 @@ class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
         if not self.compound:
             return (0, 0)
 
-        compound_entries = {"Debit": [], "Credit": []}
+        compound_entries: dict[str, list[list[Any]]] = {"Debit": [], "Credit": []}
         compound_entries["Credit" if self.credited else "Debit"].append(
             [self.account_id, self.main_account_amount]
         )
@@ -59,7 +63,7 @@ class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
             )
         return compound_entries["Debit"], compound_entries["Credit"]
 
-    def validate(self, session) -> None:
+    def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Journal Entry properties
 

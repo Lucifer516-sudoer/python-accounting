@@ -27,7 +27,7 @@ class DebitNote(BuyingMixin, AssigningMixin, Transaction):
             Account,
         )
 
-        self.main_account_types: list = [
+        self.main_account_types = [
             Account.AccountType.PAYABLE,
         ]
         self.credited = False

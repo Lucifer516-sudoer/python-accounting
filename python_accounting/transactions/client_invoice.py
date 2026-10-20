@@ -27,7 +27,7 @@ class ClientInvoice(SellingMixin, ClearingMixin, Transaction):
             Account,
         )
 
-        self.main_account_types: list = [
+        self.main_account_types = [
             Account.AccountType.RECEIVABLE,
         ]
         self.credited = False

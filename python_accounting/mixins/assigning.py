@@ -39,7 +39,9 @@ class AssigningMixin:
         id: Mapped[int]
         entity_id: Mapped[int]
         account: Mapped["Account"]
-        amount: Decimal
+
+        @property
+        def amount(self) -> Decimal: ...
 
     def balance(self, session: "AccountingSession") -> Decimal:
         """

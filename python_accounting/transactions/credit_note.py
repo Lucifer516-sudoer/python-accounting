@@ -27,7 +27,7 @@ class CreditNote(SellingMixin, AssigningMixin, Transaction):
             Account,
         )
 
-        self.main_account_types: list = [
+        self.main_account_types = [
             Account.AccountType.RECEIVABLE,
         ]
         self.credited = True
