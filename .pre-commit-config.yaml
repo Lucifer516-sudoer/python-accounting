@@ -64,6 +64,29 @@ repos:
         require_serial: true
         types: [python]
 
+      # The type checkers are whole-project gates like ruff/pytest above. mypy
+      # runs strict against the library (the CI truth machine, A3); pyright
+      # runs its standard config over package + tests + scripts (the editor
+      # gate, A5). Both are pinned in the `lint` dependency group so the hook
+      # and CI see the same versions. `require_serial` keeps them from
+      # fighting over the same .venv; their incremental caches make repeat
+      # runs fast.
+      - id: mypy
+        name: mypy (strict, package)
+        entry: uv run mypy python_accounting
+        language: system
+        pass_filenames: false
+        require_serial: true
+        types: [python]
+
+      - id: pyright
+        name: pyright (standard)
+        entry: uv run pyright
+        language: system
+        pass_filenames: false
+        require_serial: true
+        types: [python]
+
       # `uv.lock` must stay in sync with pyproject.toml, and the built wheel must
       # keep shipping config.toml at its root (config.py resolves it as
       # <package>/../config.toml at import time).
