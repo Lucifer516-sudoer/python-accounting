@@ -19,15 +19,21 @@ Decimal-only rule is enforced at a single seam instead of being re-derived
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from sqlalchemy import func
+
 if TYPE_CHECKING:
     from sqlalchemy import ColumnElement
     from sqlalchemy.orm import Query
 
+    from python_accounting.database.session import AccountingSession
     from python_accounting.models.line_item import LineItem
 
 __all__ = [
     "line_item_posted_tax_amount",
     "line_item_tax_amount",
+    "line_item_total",
+    "net_balance",
+    "net_ledger",
     "signed_sum",
 ]
 
@@ -53,6 +59,79 @@ def signed_sum(
     debit = query.filter(debit_expr).scalar() or 0
     credit = query.filter(credit_expr).scalar() or 0
     return Decimal(debit) - Decimal(credit)
+
+
+def net_ledger(
+    session: "AccountingSession", *filters: "ColumnElement[bool]"
+) -> Decimal:
+    """
+    Nets the Ledger rows matching the given scope filters: the total of debit
+    postings minus the total of credit postings.
+
+    The model, the side column and the ``Balance.BalanceType`` discrimination
+    live inside this seam; callers state only scope filters (entity, currency,
+    account, date). The entity filter is explicit — no auto-injection.
+
+    Args:
+        session (AccountingSession): The accounting session to query against.
+        *filters (ColumnElement): Scope filters for the Ledger rows.
+
+    Returns:
+        Decimal: Debit postings minus credit postings for the scoped rows.
+    """
+    from python_accounting.models import Balance, Ledger
+
+    query = session.query(func.sum(Ledger.amount).label("amount"))
+    for scope_filter in filters:
+        query = query.filter(scope_filter)
+    return signed_sum(
+        query,
+        Ledger.entry_type == Balance.BalanceType.DEBIT,
+        Ledger.entry_type == Balance.BalanceType.CREDIT,
+    )
+
+
+def net_balance(
+    session: "AccountingSession", *filters: "ColumnElement[bool]"
+) -> Decimal:
+    """
+    Nets the Balance (opening balance) rows matching the given scope filters:
+    the total of debit balances minus the total of credit balances.
+
+    The model, the side column and the ``Balance.BalanceType`` discrimination
+    live inside this seam; callers state only scope filters (entity, currency,
+    account, period). The entity filter is explicit — no auto-injection.
+
+    Args:
+        session (AccountingSession): The accounting session to query against.
+        *filters (ColumnElement): Scope filters for the Balance rows.
+
+    Returns:
+        Decimal: Debit balances minus credit balances for the scoped rows.
+    """
+    from python_accounting.models import Balance
+
+    query = session.query(func.sum(Balance.amount).label("amount"))
+    for scope_filter in filters:
+        query = query.filter(scope_filter)
+    return signed_sum(
+        query,
+        Balance.balance_type == Balance.BalanceType.DEBIT,
+        Balance.balance_type == Balance.BalanceType.CREDIT,
+    )
+
+
+def line_item_total(line_item: "LineItem") -> Decimal:
+    """
+    The pre-tax extended amount of a line item: its amount times its quantity.
+
+    Args:
+        line_item (LineItem): The line item whose total is wanted.
+
+    Returns:
+        Decimal: The line item's pre-tax extended amount.
+    """
+    return line_item.amount * line_item.quantity
 
 
 def line_item_tax_amount(line_item: "LineItem") -> Decimal:
@@ -81,7 +160,7 @@ def line_item_posted_tax_amount(line_item: "LineItem") -> Decimal:
     Returns:
         Decimal: The tax amount as it is posted to the Ledger.
     """
-    amount = line_item.amount * line_item.quantity
+    amount = line_item_total(line_item)
     if line_item.tax_inclusive:
         return amount - (amount / (1 + line_item.tax.rate / 100))
     return line_item_tax_amount(line_item)

@@ -14,6 +14,7 @@ This is the most powerful Transaction in the entire system, capable of
 from typing import Any, TYPE_CHECKING
 from python_accounting.models import Transaction
 from python_accounting.mixins import AssigningMixin, ClearingMixin
+from python_accounting.utils.money import line_item_total
 from python_accounting.exceptions import (
     MissingMainAccountAmountError,
     UnbalancedTransactionError,
@@ -59,7 +60,7 @@ class JournalEntry(Transaction, AssigningMixin, ClearingMixin):
 
         for line_item in self.line_items:
             compound_entries["Credit" if line_item.credited else "Debit"].append(
-                [line_item.account_id, line_item.amount * line_item.quantity]
+                [line_item.account_id, line_item_total(line_item)]
             )
         return compound_entries["Debit"], compound_entries["Credit"]
 

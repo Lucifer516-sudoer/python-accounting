@@ -119,6 +119,31 @@ class ReportingPeriod(IsolatingMixin, Recyclable):
         except StopIteration as exc:
             raise MissingReportingPeriodError(session.entity, year) from exc
 
+    @staticmethod
+    def for_year(session: "AccountingSession", year: int) -> "ReportingPeriod":
+        """
+        Returns the reporting period for the given calendar year.
+
+        The canonical period-resolution seam (D-017): builds the sentinel date
+        at the entity's year start and resolves it through `get_period`.
+
+        Args:
+            session (AccountingSession): The accounting session to which the
+                Reporting Period belongs.
+            year (int): The calendar year whose Reporting Period is to be found.
+
+        Raises:
+            MissingReportingPeriodError: If there no Reporting Period exists for
+                the given year.
+
+        Returns:
+            ReportingPeriod: The Reporting Period.
+
+        """
+        return ReportingPeriod.get_period(
+            session, datetime(year, session.entity.year_start, 1, 0, 0, 0)
+        )
+
     def validate(self, session: "AccountingSession") -> None:
         """
         Validates the Reporting Period properties.

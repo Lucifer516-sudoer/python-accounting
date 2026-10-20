@@ -37,7 +37,11 @@ from python_accounting.exceptions import (
     InvalidTransactionTypeError,
 )
 from python_accounting.models import Recyclable, Account, ReportingPeriod, LineItem
-from python_accounting.utils.money import line_item_tax_amount, signed_sum
+from python_accounting.utils.money import (
+    line_item_tax_amount,
+    line_item_total,
+    net_ledger,
+)
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -274,7 +278,7 @@ class Transaction(IsolatingMixin, Recyclable):
 
         return Decimal(
             sum(
-                line_item.amount * line_item.quantity
+                line_item_total(line_item)
                 + (
                     line_item_tax_amount(line_item)
                     if line_item.tax_id and not line_item.tax_inclusive
@@ -359,21 +363,15 @@ class Transaction(IsolatingMixin, Recyclable):
             Decimal: The amount posted to the Account by the Transaction.
         """
         from python_accounting.models import (
-            Balance,
             Ledger,
         )
 
-        query = (
-            session.query(func.sum(Ledger.amount).label("amount"))
-            .filter(Ledger.entity_id == self.entity_id)
-            .filter(Ledger.transaction_id == self.id)
-            .filter(Ledger.currency_id == self.currency_id)
-            .filter(Ledger.post_account_id == account.id)
-        )
-        return signed_sum(
-            query,
-            Ledger.entry_type == Balance.BalanceType.DEBIT,
-            Ledger.entry_type == Balance.BalanceType.CREDIT,
+        return net_ledger(
+            session,
+            Ledger.entity_id == self.entity_id,
+            Ledger.transaction_id == self.id,
+            Ledger.currency_id == self.currency_id,
+            Ledger.post_account_id == account.id,
         )
 
     def validate(self, session: "AccountingSession") -> None:

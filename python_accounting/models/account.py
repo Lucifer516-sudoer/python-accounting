@@ -27,7 +27,7 @@ from python_accounting.exceptions import (
     HangingTransactionsError,
 )
 from python_accounting.utils.dates import get_dates
-from python_accounting.utils.money import signed_sum
+from python_accounting.utils.money import net_balance, net_ledger
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -252,24 +252,18 @@ class Account(IsolatingMixin, Recyclable):
             end date.
         """
         from python_accounting.models import (
-            Balance,
             Ledger,
         )
 
         start_date, end_date, _, _ = get_dates(session, start_date, end_date)
 
-        query = (
-            session.query(func.sum(Ledger.amount).label("amount"))
-            .filter(Ledger.currency_id == self.currency_id)
-            .filter(Ledger.transaction_date >= start_date)
-            .filter(Ledger.transaction_date <= end_date)
-            .filter(Ledger.post_account_id == self.id)
-            .filter(Ledger.entity_id == self.entity_id)
-        )
-        return signed_sum(
-            query,
-            Ledger.entry_type == Balance.BalanceType.DEBIT,
-            Ledger.entry_type == Balance.BalanceType.CREDIT,
+        return net_ledger(
+            session,
+            Ledger.currency_id == self.currency_id,
+            Ledger.transaction_date >= start_date,
+            Ledger.transaction_date <= end_date,
+            Ledger.post_account_id == self.id,
+            Ledger.entity_id == self.entity_id,
         )
 
     @staticmethod
@@ -327,23 +321,16 @@ class Account(IsolatingMixin, Recyclable):
         )
 
         period_id = (
-            ReportingPeriod.get_period(
-                session, datetime(year, session.entity.year_start, 1, 0, 0, 0)
-            ).id
+            ReportingPeriod.for_year(session, year).id
             if year
             else session.entity.reporting_period_id
         )
-        query = (
-            session.query(func.sum(Balance.amount).label("amount"))
-            .filter(Balance.currency_id == self.currency_id)
-            .filter(Balance.reporting_period_id == period_id)
-            .filter(Balance.account_id == self.id)
-            .filter(Balance.entity_id == self.entity_id)
-        )
-        return signed_sum(
-            query,
-            Balance.balance_type == Balance.BalanceType.DEBIT,
-            Balance.balance_type == Balance.BalanceType.CREDIT,
+        return net_balance(
+            session,
+            Balance.currency_id == self.currency_id,
+            Balance.reporting_period_id == period_id,
+            Balance.account_id == self.id,
+            Balance.entity_id == self.entity_id,
         )
 
     def closing_balance(

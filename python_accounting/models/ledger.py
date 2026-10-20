@@ -22,7 +22,7 @@ from strenum import StrEnum
 from python_accounting.mixins import IsolatingMixin
 from python_accounting.config import config
 from python_accounting.models import Recyclable, Balance, Transaction
-from python_accounting.utils.money import line_item_posted_tax_amount
+from python_accounting.utils.money import line_item_posted_tax_amount, line_item_total
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
@@ -196,7 +196,7 @@ class Ledger(IsolatingMixin, Recyclable):
     @staticmethod
     def _post_simple(session: "AccountingSession", transaction: Transaction) -> None:
         for line_item in transaction.line_items:
-            amount = line_item.amount * line_item.quantity
+            amount = line_item_total(line_item)
             post, folio = Ledger._transaction_ledgers(transaction)
             post.transaction_id = folio.transaction_id = transaction.id
             post.currency_id = folio.currency_id = transaction.currency_id
