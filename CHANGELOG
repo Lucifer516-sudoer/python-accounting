@@ -1,12 +1,53 @@
 ## 2.0.0 (unreleased)
 
-- **Breaking:** `Account.section_balances()` and `Category.account_balances()` no
-  longer stamp `opening`/`closing`/`movement`/`balance` attributes onto the Account
-  objects they aggregate. The same values are returned in the result dict
+A quality remodel: the library is now fully type-annotated (`py.typed` ships in the
+wheel), checked by mypy (strict) and pyright (standard) at zero errors, and documented
+on a rebuilt MkDocs site. Accounting semantics are unchanged except where noted.
+
+### Breaking changes
+
+- Python 3.9 is no longer supported; the floor is now 3.10
+  (`requires-python = ">=3.10,<3.14"`).
+- `AccountingSession.delete()` now returns `None`. It previously returned a `bool`
+  that no caller read. Soft-delete behavior is unchanged; use `erase()`/`destroy()`
+  for real deletes and `restore()` to undo a soft delete.
+- `Account.section_balances()` and `Category.account_balances()` no longer stamp
+  `opening`/`closing`/`movement`/`balance` attributes onto the Account objects they
+  aggregate. The same values are returned in the result dict
   (`SectionBalances`/`CategoryBalances`), and `Account.section_balances` is now a
   delegating alias for
   `python_accounting.reports.financial_statement.section_balances`, which is the
   supported entry point.
+- The base exception class is now correctly spelled `AccountingException`; the old
+  misspelling `AccountingExeption` remains as a deprecated alias.
+- Dead code removed: `python_accounting.database.database_init()` and the
+  module-level engine in `python_accounting.database.engine`. Create engines with
+  the new `python_accounting.database.get_engine(url, ...)` factory and pass them
+  to `get_session(engine)`.
+- Every model now declares an explicit `__tablename__` (previously derived by a
+  `declared_attr` directive on `Base`). Table names are unchanged.
+
+### Fixes
+
+- `Transaction.contribution()` now nets debits minus credits for dual-sided
+  accounts; previously the credit side was ignored whenever the debit side was
+  non-zero.
+- `Ledger.get_hash` is annotated `-> str`, matching its runtime behavior.
+
+### Additions
+
+- Full type annotations across the library; `py.typed` ships in the wheel so
+  downstream consumers get real types in their editors.
+- `Account.statement()` is split into `schedule_outstanding()` and
+  `statement_running()`, returning the typed `OutstandingSchedule`/`ScheduleRow`
+  and `AccountStatement`/`StatementRow` results. `statement()` remains as a thin
+  compatibility shim that restamps the transaction-level attributes
+  (`debit`/`credit`/`cleared_amount`/`uncleared_amount`/`age`) and returns the
+  legacy dict shape.
+- mypy (strict) and pyright (standard) run at zero errors in CI and pre-commit;
+  ruff gains `ANN`/`TC`/`RUF`/`PERF` rule families.
+- Documentation site rebuilt with MkDocs (Material + mkdocstrings); Sphinx
+  removed.
 
 ## 1.1.0 - 2026-10-16
 

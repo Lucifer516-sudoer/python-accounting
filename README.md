@@ -18,7 +18,7 @@ This library is a community initiative of [microbooks.io](https://microbooks.io)
 
 ## Installation
 
-You can use [pip](https://pip.pypa.io/en/stable/) to install. The library requires python 3.9+.
+You can use [pip](https://pip.pypa.io/en/stable/) to install. The library requires python 3.10+.
 
 ```bash
 pip install python-accounting
@@ -35,7 +35,9 @@ pip install python-accounting[postgres]   # PostgreSQL
 Sqlite needs no extra package and is what the test suite runs against.
 
 ## Usage
-Full documemntation for the library can be found on [readthedocs](https://python-accounting.readthedocs.io/en/latest/).
+Full documentation for the library — a quickstart, a step-by-step tutorial, task
+guides and the generated API reference — can be found on
+[readthedocs](https://python-accounting.readthedocs.io/en/latest/).
 
 To use the Library, we first need to configure it.
 
@@ -464,13 +466,13 @@ Cashbook Balance                      30.0000
 ```
 ## Development
 
-The toolchain is [uv](https://docs.astral.sh/uv/); Python 3.9 - 3.13 are supported.
+The toolchain is [uv](https://docs.astral.sh/uv/); Python 3.10 - 3.13 are supported.
 
 ```bash
 uv sync --all-groups    # create .venv with every dependency group
 uv run ruff format .    # format (CI runs the check-only form)
 uv run ruff check .     # lint
-uv run pytest           # 115 tests, in-memory sqlite, no services needed
+uv run pytest           # 148 tests, in-memory sqlite, no services needed
 ```
 
 `uv run pre-commit install` wires the same gate (format, lint, tests, lock file and wheel
@@ -510,7 +512,7 @@ docker compose up --build --abort-on-container-exit --exit-code-from drivers
 
 `pyproject.toml` is the single source of the version; keep it and the changelog in sync,
 then run the gate above. Publishing happens on GitHub: create a release (tag e.g.
-`v1.1.0`) and `.github/workflows/publish.yml` builds and uploads the distributions to
+`v2.0.0`) and `.github/workflows/publish.yml` builds and uploads the distributions to
 PyPI using the `PYPI_API_TOKEN` secret.
 
 ## Supported Databases (Fully tested)
