@@ -21,10 +21,6 @@ for module_info in sorted(
     if module_info.ispkg:
         continue
     module_name = module_info.name
-    # Skip modules that are internal scaffolding; they still render if
-    # referenced, they just don't get their own page.
-    if module_name.endswith("database_init"):
-        continue
 
     module_path = module_name.replace(".", "/") + ".md"
     full_doc_path = "reference/" + module_path
