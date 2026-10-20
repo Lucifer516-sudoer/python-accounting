@@ -23,15 +23,24 @@ Candidate 1 (split `Account.statement`, retire account stamps) with Candidate 2 
 dicts) riding along, landing as PLAN T4.0a–T4.0c BEFORE T4.1 — the mixins pass annotates
 the settled shape. Candidate 4 (money seam, `utils/money.py`) is sequenced as T4.4a2,
 just before the T4.4b `contribution()` fix so D-010 lands on `signed_sum()`. Fact
-dossier: `/tmp/opencode/deepening-dossier.md`; vocabulary: `GLOSSARY.md`. Next up is
-T4.0a.
+dossier: `/tmp/opencode/deepening-dossier.md`; vocabulary: `GLOSSARY.md`.
+
+**Phase 3.5 DONE (2026-10-20):** T4.0a `e608c74` (typed result dicts), T4.0b `e450a94`
+(split statement into schedule_outstanding/statement_running + restamping shim;
+Balance gained `__allow_unmapped__` + cleared_amount/uncleared_amount/age stamps;
+Transaction.balance stamp does NOT exist — collides with AssigningMixin.balance(), the
+shim uses `setattr(entry, "balance", ...)`), T4.0c `646da17` (section_balances moved to
+reports/financial_statement.py as a module-level function; Account.section_balances is
+a delegating alias; the four account stamps + `__allow_unmapped__` deleted from
+Account). Next up is **T4.1** (six mixins, isolating foreign_keys string-form probe
+first, D-007).
 
 Progress: T0–T3 done — every model file is 0/0 in both checkers. T3 commits: base,
 recyclable, recycled, currency, user, account, category, tax, reporting_period,
 transaction, ledger `91ece95`, line_item `20922c7`, balance `1cda640`, assignment
-`e6fa5ce`, entity `5ab5291`. Current totals to beat: **mypy 221 / pyright 155 /
-pytest 122 / ruff format 90 files clean**. Per-file DoD: 0 errors in both checkers;
-totals strictly decrease.
+`e6fa5ce`, entity `5ab5291`. Phase 3.5 (T4.0a–T4.0c) done — see below. Current totals
+to beat: **mypy 214 / pyright 154 / pytest 143 / ruff format 92 files clean**. Per-file
+DoD: 0 errors in both checkers; totals strictly decrease.
 
 Hard-won lessons baked into the code (do not undo):
 
