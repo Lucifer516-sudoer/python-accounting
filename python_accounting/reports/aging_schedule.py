@@ -11,6 +11,7 @@ Represents amounts oustanding to/from suppliers/clients, grouped by their age.
 """
 
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from python_accounting.models import Account
@@ -18,8 +19,10 @@ from python_accounting.config import config
 from python_accounting.utils.dates import get_dates
 
 if TYPE_CHECKING:
-    # Account.AccountType is a ClassVar on the mapped class and cannot be used as
-    # a type expression (DECISIONS.md D-015), so the stub class is imported here.
+    from python_accounting.database.session import AccountingSession
+
+    # Account.AccountType is a ClassVar on the mapped class and cannot be used
+    # as a type expression (DECISIONS.md D-015), so the stub class is imported.
     from python_accounting.models.account import AccountType, ScheduleRow
 
 
@@ -40,7 +43,7 @@ class AgingSchedule:
         }
 
     """
-    balances: dict
+    balances: dict[str, Decimal]
     """
     (dict): The total outstanding amounts per age bracket.
     ::
@@ -53,9 +56,9 @@ class AgingSchedule:
             365+ Bad Debts (Decimal): Balances over a year old.
         }
     """
-    accounts: list
+    accounts: list[Account]
     """(list): The Account who's outsanding transactions constitue the balances."""
-    account_type = None
+    account_type: "AccountType | None" = None
     """
     (`Account.AccountType.RECEIVABLE|Account.AccountType.PAYABLE`):
     The Account type to get aged balances for. Can only be Receivable or Payable.
@@ -66,13 +69,13 @@ class AgingSchedule:
 
     def __init__(
         self,
-        session,
+        session: "AccountingSession",
         account_type: "AccountType",
-        end_date: datetime = None,
+        end_date: datetime | None = None,
     ) -> None:
         self.account_type = account_type
         self.accounts = []
-        self.balances = {k: 0 for k, v in self.brackets.items()}
+        self.balances = {k: Decimal(0) for k, v in self.brackets.items()}
         _, self.end_date, _, _ = get_dates(session, None, end_date)
 
         for account, schedule in [
@@ -86,7 +89,7 @@ class AgingSchedule:
             .all()
         ]:
             if schedule.transactions:
-                account.balances = {k: 0 for k, v in self.brackets.items()}
+                account.balances = {k: Decimal(0) for k, v in self.brackets.items()}
                 self._allocate_balances(schedule.transactions, account)
                 self.accounts.append(account)
 

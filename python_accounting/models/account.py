@@ -172,6 +172,11 @@ class Account(IsolatingMixin, Recyclable):
         # annotation on a mapped class would require __allow_unmapped__.
         session_index: int
 
+        # Outstanding-amount bracket dict stamped by reports/aging_schedule.py
+        # (D-016 §6 keeps this report-owned stamping). Runtime instance
+        # attribute only, hence the TYPE_CHECKING declaration.
+        balances: dict[str, Decimal]
+
     __tablename__ = "account"
 
     # Chart of Accounts types
