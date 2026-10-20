@@ -35,7 +35,15 @@ a delegating alias; the four account stamps + `__allow_unmapped__` deleted from
 Account). **T4.1 DONE (2026-10-20):** all six mixins 0/0 in both checkers.
 **T4.2–T4.4 DONE (2026-10-20):** see Progress below.
 
-Progress: T0–T4 done. T4.1 mixins (isolating `e7de7dd`, clearing `f842cc1`,
+**T5.1 + T5.2 DONE (2026-10-20):** transactions/ `076a68c`; reports/ in three
+commits — FinancialStatement base `361c2b0`, four statements `983a331`,
+AgingSchedule `c8c0e2d`. **`mypy python_accounting` is now ZERO (was 468 at
+baseline).** Remaining checker errors are tests-only: pyright 13 (float/int
+literals assigned to Mapped[Decimal] attrs, test_base is_callable,
+test_category TypedDict int literals), mypy tests 106 (mostly "call to untyped
+function in typed context" — test helper defs need annotations; T6.2 scope).
+
+Progress: T0–T5 done. T4.1 mixins (isolating `e7de7dd`, clearing `f842cc1`,
 assigning `75d6d56`, trading `d90e936`, buying+selling `e83cfed`), T4.2 session
 layer `5e886c3` (delete -> None user-approved), T4.3 dead code `e4e86d2`,
 get_engine `3d2cb62`, T4.4a2 money seam `526f1f3` (`utils/money.py`:
@@ -44,13 +52,23 @@ pre-existing ledger.py errors — Tax.account_id nullable vs NOT NULL ledger
 posts, assert-guarded), T4.4a get_hash `7dd4ebb` (earlier), T4.4b contribution
 `a12abac` (D-010 fixed test-first: dual-sided test RED with Decimal("150.0000")
 == 50, then routed through signed_sum), T4.4c header typo `99cf289`.
-Current totals to beat: **mypy 126 / pyright 103 / pytest 148 / ruff format 93
-files clean**. Per-file DoD: 0 errors in both checkers; totals strictly decrease.
+Current totals to beat: **mypy package 0 / pyright package 0 / pyright tests
+13 / mypy tests 106 / pytest 148 / ruff format 93 files clean**. Per-file DoD:
+0 errors in both checkers; totals strictly decrease.
 
-Next up: T5.1 transactions/ (10 STI subclasses + __init__), T5.2 reports/
-(FinancialStatement, income_statement, balance_sheet, cashflow_statement,
-trial_balance, aging_schedule — the bulk of the remaining 126/103 errors),
-T6 scripts+tests, T7 ruff ANN/TC/RUF/PERF, T8 hooks/CI, T9.4 release prep.
+Next up: T6.1 scripts (already 0/0 in both checkers — verify annotations, then
+close), T6.2 tests (annotate helper defs for mypy; Decimal-wrap literal
+assignments for pyright — preserve exact values, see the clearing-commit
+precedent), T7 ruff ANN/TC/RUF/PERF, T8 hooks/CI, T9.4 release prep.
+
+T5.2 patterns worth reusing (reports/): instance-level config-driven StrEnums
+are typed by per-subclass TYPE_CHECKING stub classes + `sections: "_Sections"`
+declarations in the class body under TYPE_CHECKING, with the BASE declaring
+`sections: Any` so the narrowing override is compatible in both checkers
+(D-015 adapted from class-level to instance-level). Report `Accounts` enums
+are `ClassVar["type[AccountTypeStub]"] = cast(...)` and passed to
+section_balances via `list(IncomeStatement.Accounts)` — iterating the enum
+class yields the same members the bare class did.
 
 Hard-won lessons baked into the code (do not undo):
 
