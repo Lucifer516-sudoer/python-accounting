@@ -10,8 +10,11 @@ Provides functionality to Transactions that can sell goods and services for an E
 
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from python_accounting.mixins.trading import TradingMixin
+
+if TYPE_CHECKING:
+    from python_accounting.models.account import AccountTypeStub
 
 
 class SellingMixin(TradingMixin):
@@ -19,17 +22,17 @@ class SellingMixin(TradingMixin):
     This class provides validation for Transaction that sell goods and services for an Entity.
     """
 
-    line_item_types: list
+    line_item_types: list["AccountTypeStub"]
     """
     (`list` of `Account.AccountType`): A list of Account
     Types that are allowed as Line Item accounts for selling Transactions.
     """
-    main_account_types: list
+    main_account_types: list["AccountTypeStub"]
     """
     (`list` of `Account.AccountType`): A list of Account
     Types that are allowed as main accounts for selling Transactions.
     """
-    account_type_map: dict
+    account_type_map: dict[str, "AccountTypeStub"]
     """
     (`dict` of`Account.AccountType`): A mapping of
     Transactions to the Account Types that apply to their validation.
@@ -40,9 +43,9 @@ class SellingMixin(TradingMixin):
             Account,
         )
 
-        self.line_item_types: list = [Account.AccountType.OPERATING_REVENUE]
+        self.line_item_types = [Account.AccountType.OPERATING_REVENUE]
 
-        self.account_type_map: dict = {
+        self.account_type_map = {
             "ClientInvoice": Account.AccountType.RECEIVABLE,
             "CreditNote": Account.AccountType.RECEIVABLE,
             "CashSale": Account.AccountType.BANK,

@@ -10,8 +10,11 @@ Provides functionality to Transactions that can purchase goods and services for 
 
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from python_accounting.mixins.trading import TradingMixin
+
+if TYPE_CHECKING:
+    from python_accounting.models.account import AccountTypeStub
 
 
 class BuyingMixin(TradingMixin):
@@ -19,17 +22,17 @@ class BuyingMixin(TradingMixin):
     This class provides validation for Transaction that buy goods and services for an Entity.
     """
 
-    line_item_types: list
+    line_item_types: list["AccountTypeStub"]
     """
     (`list` of `Account.AccountType`): A list of Account
     Types that are allowed as Line Item accounts for buying Transactions.
     """
-    main_account_types: list
+    main_account_types: list["AccountTypeStub"]
     """
     (`list` of `Account.AccountType`): A list of Account
     Types that are allowed as main accounts for buying Transactions.
     """
-    account_type_map: dict
+    account_type_map: dict[str, "AccountTypeStub"]
     """
     (`dict` of `Account.AccountType`): A mapping of
     Transactions to the Account Types that apply to their validation.
@@ -40,9 +43,9 @@ class BuyingMixin(TradingMixin):
             Account,
         )
 
-        self.line_item_types: list = Account.purchasables
+        self.line_item_types = Account.purchasables
 
-        self.account_type_map: dict = {
+        self.account_type_map = {
             "SupplierBill": Account.AccountType.PAYABLE,
             "DebitNote": Account.AccountType.PAYABLE,
             "CashPurchase": Account.AccountType.BANK,
