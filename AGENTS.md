@@ -79,6 +79,27 @@ checker gates, MkDocs site), README refreshed (3.10+ floor, docs blurb,
 — the user pushes the tag (`v2.0.0`); publish.yml untouched (trusted
 publishing is a follow-up).
 
+**Phase 10 DONE (2026-10-20, D-017 post-2.0 deepening):** docs `da0b91a`
+(D-017 + GLOSSARY terms + PLAN Phase 10), seams `096e924` —
+`ReportingPeriod.for_year(session, year)` (canonical period resolution;
+`get_dates` + `Account.opening_balance` delegate; the session mixin's
+`_year_period` deliberately NOT consolidated — it queries `calendar_year`
+with `ignore_isolation=True`, a different contract), `get_dates` returns the
+`Dates` NamedTuple (positional unpacking preserved, zero call-site edits),
+`net_ledger`/`net_balance` in `utils/money.py` (own model + side column +
+query construction; entity filter stays EXPLICIT in caller filters;
+migrated `balance_movement`/`opening_balance`/`contribution`;
+`signed_sum` stays public), `line_item_total` absorbs the four
+`amount * quantity` spellings. `Balance.opening_trial_balance` hand-bucketing
+left as-is (sign-bucketing, not netting — D-017 §5). Tests written RED first
+(`tests/test_money.py` 6, `tests/test_period_seam.py` 5); zero existing-test
+edits. **T10.3+T10.4 landed as ONE commit** — pre-commit stashes unstaged
+files and `opening_balance` entangles both seams in one function body, so
+the two planned commits could not be staged independently.
+Current totals: **mypy package 0 / mypy tests 0 / pyright 0 / pytest 159 /
+ruff format 93 files clean / ruff check All checks passed / mkdocs --strict
+zero warnings / pre-commit 18 hooks green.**
+
 T5.2 patterns worth reusing (reports/): instance-level config-driven StrEnums
 are typed by per-subclass TYPE_CHECKING stub classes + `sections: "_Sections"`
 declarations in the class body under TYPE_CHECKING, with the BASE declaring
@@ -111,10 +132,11 @@ Hard-won lessons baked into the code (do not undo):
 - zsh eats backticks in `git commit -m` messages (command substitution). Use single
   quotes or a heredoc.
 
-Next up: T4.2 session layer (**user checkpoint pending: `delete -> None`**, D-009),
-T4.3 dead-code removal, T4.4a2 money seam (`utils/money.py`, D-016 §7), T4.4b
-`contribution()` test-first fix (D-010 — the precedence bug is deliberately still
-present, wrapped in `Decimal(...)` with a NOTE comment).
+Next up: nothing queued — the T0–T9 remodel and Phase 10 (D-017) are both
+complete. Remaining follow-ups live in SPEC §10 (Zensical migration, Python
+3.14, trusted publishing, doc-snippet CI) and the architecture review's
+unpicked findings (validation dispatcher, serial seam, config contract,
+N+1 report aggregation — see `/tmp/opencode/architecture-review-20261020-1425.html`).
 
 ## Setup — this will bite you
 
