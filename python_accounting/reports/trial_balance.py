@@ -12,11 +12,12 @@ Represents the equality of all the credit and debit balances of an Entity.
 
 from datetime import datetime
 from typing import TYPE_CHECKING
-from strenum import StrEnum
 from python_accounting.reports.financial_statement import FinancialStatement
 from python_accounting.utils.dates import get_dates
 
 if TYPE_CHECKING:
+    from strenum import StrEnum
+
     from python_accounting.database.session import AccountingSession
 
     class _Sections(StrEnum):

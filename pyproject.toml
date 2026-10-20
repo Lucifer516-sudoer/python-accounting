@@ -132,6 +132,11 @@ select = [
            # was removed in the previous commit, and it is what keeps the
            # design checks (PLR0912 branches, PLR0913 args, PLR0914 locals,
            # PLR0915 statements, PLR0917 positional args) alive.
+    "TC",  # flake8-type-checking. Keeps type-only imports under
+           # TYPE_CHECKING so the runtime import graph stays as-is (D-004).
+           # The runtime-evaluated-base-classes guard below stops it from
+           # moving SQLAlchemy model imports that annotations evaluate at
+           # mapper-configuration time.
 ]
 # Every entry here is a deliberate decision, not a backlog. Adding one requires
 # a comment saying why.
@@ -175,15 +180,17 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# SQLAlchemy resolves relationship targets and `Mapped["X"]` annotations by
-# name at mapper-configuration time. The names are quoted precisely so these
-# modules do not import each other; importing them for real creates a cycle
-# and breaks the package, which is why F821 cannot be fixed here.
-"python_accounting/models/*.py" = ["F821"]
-"python_accounting/mixins/*.py" = ["F821"]
-"python_accounting/database/session_overrides.py" = ["F821"]
 # The old gate was `pylint ./python_accounting`, so the test suite has never
 # been held to the complexity limits. Long linear test bodies and wide helper
 # signatures are idiomatic in tests; every other rule still applies there, and
 # the library above stays under these limits.
 "tests/*.py" = ["PLR0912", "PLR0913", "PLR0915"]
+
+[tool.ruff.lint.flake8-type-checking]
+# Declarative model classes evaluate their annotations at runtime (SQLAlchemy
+# resolves `Mapped["X"]` and relationship targets by name at
+# mapper-configuration time), so ruff must never assume the classes they
+# inherit from are import-time-inert. With Base listed here, TC rules leave
+# model-layer imports alone (D-004 probe: zero move-to-TYPE_CHECKING findings
+# in the model layer with this guard).
+runtime-evaluated-base-classes = ["python_accounting.models.base.Base"]

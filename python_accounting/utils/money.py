@@ -19,10 +19,10 @@ Decimal-only rule is enforced at a single seam instead of being re-derived
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import ColumnElement
-from sqlalchemy.orm import Query
-
 if TYPE_CHECKING:
+    from sqlalchemy import ColumnElement
+    from sqlalchemy.orm import Query
+
     from python_accounting.models.line_item import LineItem
 
 __all__ = [

@@ -10,16 +10,18 @@ Provides accounting specific overrides for some sqlalchemy session methods.
 
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Engine
-from sqlalchemy.engine import Connection
 from sqlalchemy.orm.session import Session
 
 from python_accounting.models import Entity
 from python_accounting.database.session_overrides import SessionOverridesMixin
 from python_accounting.database.accounting_functions import AccountingFunctionsMixin
 from python_accounting.database.event_listeners import EventListenersMixin
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Connection
 
 
 class AccountingSession(
