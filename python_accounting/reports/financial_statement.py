@@ -15,7 +15,6 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 from strenum import StrEnum
 from sqlalchemy import select
-from sqlalchemy.orm.session import Session
 from python_accounting.config import config as configuration
 from python_accounting.models import Account
 from python_accounting.models.account import SectionBalances
@@ -103,11 +102,23 @@ class FinancialStatement:
 
     config: str
     """(str): The configuration section for the report."""
+    start_date: datetime
+    """(datetime): The earliest transaction date for Transaction amounts to be included
+    in the report. Set by every concrete statement's __init__ via get_dates."""
     end_date: datetime
     """(datetime): The latest transaction date for Transaction amounts to be included in the report."""
 
+    # The sections/results enums are built per instance from config.toml at
+    # runtime, so the base cannot know their members. Each concrete statement
+    # narrows these with a TYPE_CHECKING stub class (D-015 pattern, instance
+    # level); Any here keeps the override compatible in both checkers.
+    sections: Any
+    """(StrEnum): The sections of the report."""
+    results: Any
+    """(StrEnum): The results of the report."""
+
     # printing
-    printout: tuple
+    printout: tuple[Any, ...]
     """(tuple): The sections to be printed out."""
     width: int
     """(int): The width of the report printout."""
@@ -118,30 +129,28 @@ class FinancialStatement:
     grandtotal: str = "=" * configuration.reports["result_length"]
     """(str): The underline for report grand totals."""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: "AccountingSession") -> None:
         self.session = session
         self.title = configuration.reports[self.config]["title"]
 
         # Financial Statement Sections
         self.sections = StrEnum(
             "Sections",
-            {
-                k: v["label"]
+            [
+                (k, v["label"])
                 for k, v in configuration.reports[self.config]["sections"].items()
-            },
+            ],
         )
-        """(StrEnum): The sections of the report."""
 
         # Financial Statement Results
         self.results = StrEnum(
             "Results",
-            dict(configuration.reports[self.config]["results"].items()),
+            list(configuration.reports[self.config]["results"].items()),
         )
-        """(StrEnum): The results of the report."""
 
         section_names = [section.name for section in self.sections]
 
-        self.accounts = {k: {} for k in section_names}
+        self.accounts: dict[str, dict[str, Any]] = {k: {} for k in section_names}
         """(dict): The Accounts in the sections of the report, by Account category."""
         # Keys are config-driven section names plus the synthetic "debit"/"credit"
         # scalars; values are label-keyed dicts or Decimals — heterogeneous by
@@ -150,7 +159,7 @@ class FinancialStatement:
         """(dict): The total balances of the Accounts in the sections of the report, by Account category."""
         self.totals: dict[str, Decimal] = dict.fromkeys(section_names, Decimal(0))
         """(dict): The Total balances of Accounts in the sections of the report."""
-        self.result_amounts = {}
+        self.result_amounts: dict[str, Decimal] = {}
         """(dict): The amounts results of the report."""
 
         self.balances.update({"debit": 0, "credit": 0})
@@ -161,8 +170,8 @@ class FinancialStatement:
 
     def _get_sections(
         self,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         full_balance: bool = True,
     ) -> None:
         for section, content in configuration.reports[self.config]["sections"].items():
@@ -188,7 +197,7 @@ class FinancialStatement:
         self.width = max(len(period), 45)
         return f"""\n{self.session.entity.name.center(self.width)}\n{self.title.center(self.width)}\n{period.center(self.width)}"""
 
-    def _print_section(self, section, factor=1) -> str:
+    def _print_section(self, section: StrEnum, factor: int = 1) -> str:
         content = f"\n{section.value}"
 
         for account_type, balance in self.balances[section.name].items():
@@ -196,9 +205,11 @@ class FinancialStatement:
             content += f"{label}{balance * factor:>{self.width - len(label) + 1}}"
         return content
 
-    def _print_result(self, result, grandtotal=False) -> str:
+    def _print_result(self, result: StrEnum, grandtotal: bool = False) -> str:
         return f"""{f"{self.subtotal:>{self.width}}"}\n{result}{f"{self.result_amounts[result.name]:>{self.width - len(result)}}"}\n{f"{self.grandtotal:>{self.width}}" if grandtotal else ""}"""
 
-    def _print_total(self, section, factor=1, grandtotal=False) -> str:
+    def _print_total(
+        self, section: StrEnum, factor: int = 1, grandtotal: bool = False
+    ) -> str:
         label = f"Total {section.value}"
         return f"""{f"{self.subtotal:>{self.width}}"}\n{label}{f"{self.totals[section.name] * factor:>{self.width - len(label)}}"}\n{f"{self.grandtotal:>{self.width}}" if grandtotal else ""}"""
