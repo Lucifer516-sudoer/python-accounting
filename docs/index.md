@@ -33,6 +33,7 @@ touches the database behind your back.
 <div class="grid cards" markdown>
 
 -   :material-database-lock: **Tamper-evident by design**
+
     ---
 
     Every posting is hash-chained to the one before it. Direct database
@@ -41,6 +42,7 @@ touches the database behind your back.
     [:octicons-arrow-right-24: How the hash chain works](explanation/ledger-hashing.md)
 
 -   :material-domain: **Multi-entity, isolated**
+
     ---
 
     One database, many companies. Every query is automatically filtered to
@@ -49,6 +51,7 @@ touches the database behind your back.
     [:octicons-arrow-right-24: Entity isolation](explanation/entity-isolation.md)
 
 -   :material-undo-variant: **Soft delete, full audit trail**
+
     ---
 
     `session.delete()` never destroys anything. It records *who* deleted
@@ -57,6 +60,7 @@ touches the database behind your back.
     [:octicons-arrow-right-24: Recycling](explanation/recycling.md)
 
 -   :material-chart-box-outline: **IFRS & GAAP reports**
+
     ---
 
     Income statement, balance sheet, cashflow, trial balance, aging
@@ -65,6 +69,7 @@ touches the database behind your back.
     [:octicons-arrow-right-24: Reports](guides/index.md)
 
 -   :material-currency-usd: **Decimal to the bone**
+
     ---
 
     Money is `Decimal` everywhere. No floats drift into your balance sheet,
@@ -73,6 +78,7 @@ touches the database behind your back.
     [:octicons-arrow-right-24: Why it matters](explanation/index.md)
 
 -   :material-cog-outline: **Config-driven**
+
     ---
 
     Account types, code ranges, transaction prefixes, report sections and

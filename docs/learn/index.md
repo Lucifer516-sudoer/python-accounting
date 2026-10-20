@@ -16,6 +16,7 @@ statement and balance sheet.
 <div class="grid cards" markdown>
 
 -   :material-numeric-1-circle: **Entities & Sessions**
+
     ---
 
     Companies, currencies, and the session that keeps them apart.
@@ -23,6 +24,7 @@ statement and balance sheet.
     [:octicons-arrow-right-24: Start](01-entities-and-sessions.md)
 
 -   :material-numeric-2-circle: **Accounts**
+
     ---
 
     The chart of accounts — where money lives.
@@ -30,6 +32,7 @@ statement and balance sheet.
     [:octicons-arrow-right-24: Continue](02-accounts.md)
 
 -   :material-numeric-3-circle: **Transactions**
+
     ---
 
     Moving money: line items, posting, and the ledger.
@@ -37,6 +40,7 @@ statement and balance sheet.
     [:octicons-arrow-right-24: Continue](03-transactions.md)
 
 -   :material-numeric-4-circle: **Taxes**
+
     ---
 
     VAT, sales tax, and the control account behind them.
@@ -44,6 +48,7 @@ statement and balance sheet.
     [:octicons-arrow-right-24: Continue](04-taxes.md)
 
 -   :material-numeric-5-circle: **Clearing & Assignment**
+
     ---
 
     Matching invoices against receipts without double-counting.
@@ -51,6 +56,7 @@ statement and balance sheet.
     [:octicons-arrow-right-24: Continue](05-clearing-and-assignment.md)
 
 -   :material-numeric-6-circle: **Reports**
+
     ---
 
     Turning the ledger into an income statement and balance sheet.
