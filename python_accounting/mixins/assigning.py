@@ -97,7 +97,8 @@ class AssigningMixin:
         Returns:
             None
         """
-        _ = [session.delete(a) for a in self.assignments(session)]
+        for assignment in self.assignments(session):
+            session.delete(assignment)
 
     def bulk_assign(self, session: "AccountingSession") -> None:
         """

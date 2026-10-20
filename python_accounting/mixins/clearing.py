@@ -97,4 +97,5 @@ class ClearingMixin:
         Returns:
             None
         """
-        _ = [session.delete(a) for a in self.clearances(session)]
+        for clearance in self.clearances(session):
+            session.delete(clearance)

@@ -29,6 +29,11 @@ class IsolatingMixin:
 
     entity_id: Mapped[int] = mapped_column(ForeignKey("entity.id", use_alter=True))
 
+    if TYPE_CHECKING:
+        # declared_attr below interpolates the concrete host class's name into
+        # the foreign_keys string; plain mixins have no __name__ of their own.
+        __name__: str
+
     @declared_attr
     def entity(self) -> Mapped["Entity"]:
         """Returns the Entity of the instance."""
