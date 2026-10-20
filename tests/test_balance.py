@@ -81,9 +81,9 @@ def test_balance_validation(session, entity, currency):
     session.add(account)
 
     print(account.account_type)
-    with pytest.raises(InvalidBalanceAccountError) as e:
+    with pytest.raises(InvalidBalanceAccountError) as e1:
         session.commit()
-    assert str(e.value) == "Income Statement Accounts cannot have an opening balance."
+    assert str(e1.value) == "Income Statement Accounts cannot have an opening balance."
 
     account.account_type = Account.AccountType.RECEIVABLE
     session.add(account)
@@ -92,10 +92,10 @@ def test_balance_validation(session, entity, currency):
     balance.transaction_type = Transaction.TransactionType.CREDIT_NOTE
     session.add(balance)
 
-    with pytest.raises(InvalidBalanceTransactionError) as e:
+    with pytest.raises(InvalidBalanceTransactionError) as e2:
         session.commit()
     assert (
-        str(e.value)
+        str(e2.value)
         == "Balance Transaction must be one of Client Invoice, Supplier Bill or Journal Entry."
     )
 
@@ -103,9 +103,9 @@ def test_balance_validation(session, entity, currency):
     balance.amount = Decimal("-1")
     session.add(balance)
 
-    with pytest.raises(NegativeValueError) as e:
+    with pytest.raises(NegativeValueError) as e3:
         session.commit()
-    assert str(e.value) == "Balance amount cannot be negative."
+    assert str(e3.value) == "Balance amount cannot be negative."
 
 
 def test_balance_isolation(session, entity, currency):

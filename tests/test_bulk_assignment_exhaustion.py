@@ -1,14 +1,30 @@
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 
 import pytest
+from typing import cast
 
-from python_accounting.models import Account, Assignment, Ledger
+from python_accounting.database.session import AccountingSession
+from python_accounting.models import (
+    Account,
+    Assignment,
+    Currency,
+    Entity,
+    Ledger,
+    Transaction,
+)
 from python_accounting.transactions import ClientInvoice, ClientReceipt
 
 
 @pytest.fixture
-def invoices(session, entity, currency, post_document, fixed_today):
+def invoices(
+    session: AccountingSession,
+    entity: Entity,
+    currency: Currency,
+    post_document: Callable[..., Transaction],
+    fixed_today: datetime,
+) -> tuple[Account, Account, list[ClientInvoice], ClientInvoice]:
     account = Account(
         name="Test customer",
         account_type=Account.AccountType.RECEIVABLE,
@@ -53,14 +69,25 @@ def invoices(session, entity, currency, post_document, fixed_today):
         datetime(fixed_today.year, 1, 2),
         "100",
     )
-    return account, bank, [documents[day] for day in (5, 6, 7)], other_invoice
+    # post_document is typed Callable[..., Transaction]; the document_type
+    # argument fixes the concrete STI subclass at each call site.
+    return (
+        account,
+        bank,
+        cast("list[ClientInvoice]", [documents[day] for day in (5, 6, 7)]),
+        cast("ClientInvoice", other_invoice),
+    )
 
 
-def _assignments(payment, session):
+def _assignments(
+    payment: ClientReceipt, session: AccountingSession
+) -> list[Assignment]:
     return sorted(payment.assignments(session), key=lambda assignment: assignment.id)
 
 
-def _ledger_values(session):
+def _ledger_values(
+    session: AccountingSession,
+) -> list[tuple[int, int, Decimal, str]]:
     return [
         (row.id, row.transaction_id, row.amount, row.hash)
         for row in session.query(Ledger).order_by(Ledger.id).all()
@@ -88,7 +115,7 @@ def test_bulk_assignment_stops_at_available_funds(
     ledger_before = _ledger_values(session)
     balance_before = payment.balance(session)
 
-    assert payment.bulk_assign(session) is None
+    payment.bulk_assign(session)
     assignments = _assignments(payment, session)
     expected_amounts = [Decimal(value) for value in expected]
     assert [(a.assigned_id, a.amount) for a in assignments] == [
@@ -110,7 +137,13 @@ def test_bulk_assignment_stops_at_available_funds(
     assert _ledger_values(session) == ledger_before
 
 
-def _reserved_payment(session, invoices, post_document, fixed_today, amount):
+def _reserved_payment(
+    session: AccountingSession,
+    invoices: tuple[Account, Account, list[ClientInvoice], ClientInvoice],
+    post_document: Callable[..., Transaction],
+    fixed_today: datetime,
+    amount: str,
+) -> ClientReceipt:
     account, bank, documents, _ = invoices
     payment = post_document(ClientReceipt, account, bank, fixed_today, amount)
     assignment = Assignment(
@@ -123,7 +156,8 @@ def _reserved_payment(session, invoices, post_document, fixed_today, amount):
     )
     session.add(assignment)
     session.flush()
-    return payment
+    # The document_type above is ClientReceipt, which carries AssigningMixin.
+    return cast("ClientReceipt", payment)
 
 
 @pytest.mark.parametrize("amount,expected_new", [("100", []), ("150", ["50"])])
@@ -137,7 +171,7 @@ def test_bulk_assignment_respects_lifetime_source_capacity(
     balance_before = payment.balance(session)
     assert balance_before == Decimal(amount) - 100
 
-    assert payment.bulk_assign(session) is None
+    payment.bulk_assign(session)
     assignments = _assignments(payment, session)
     assert [(a.id, a.assigned_id, a.amount) for a in assignments[:1]] == before
     assert [(a.assigned_id, a.amount) for a in assignments[1:]] == [
@@ -152,7 +186,7 @@ def test_bulk_assignment_respects_lifetime_source_capacity(
     assert documents[2].cleared(session) == 0
 
     snapshot = [(a.id, a.assigned_id, a.amount) for a in assignments]
-    assert payment.bulk_assign(session) is None
+    payment.bulk_assign(session)
     assert [
         (a.id, a.assigned_id, a.amount) for a in _assignments(payment, session)
     ] == snapshot
@@ -171,7 +205,7 @@ def test_exhausted_source_still_evaluates_schedule(
         return original_schedule(account, *args, **kwargs)
 
     monkeypatch.setattr(Account, "schedule_outstanding", schedule_outstanding)
-    assert payment.bulk_assign(session) is None
+    payment.bulk_assign(session)
     assert calls == [invoices[0].id]
     assert len(payment.assignments(session)) == 1
 
@@ -210,7 +244,7 @@ def test_exhaustion_preserves_future_target_reservations(
 
     payment = post_document(ClientReceipt, account, bank, fixed_today, amount)
     ledger_before = _ledger_values(session)
-    assert payment.bulk_assign(session) is None
+    payment.bulk_assign(session)
     assignments = _assignments(payment, session)
     expected_amounts = [Decimal(value) for value in expected]
     assert [(a.assigned_id, a.amount) for a in assignments] == [

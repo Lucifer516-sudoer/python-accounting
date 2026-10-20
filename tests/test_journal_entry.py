@@ -339,10 +339,10 @@ def test_journal_entry_validation(session, entity, currency):
     session.flush()
 
     transaction.line_items.update([line_item1, line_item2, line_item3])
-    with pytest.raises(UnbalancedTransactionError) as e:
+    with pytest.raises(UnbalancedTransactionError) as e1:
         session.commit()
-    assert str(e.value) == "Total Debit amounts do not match total Credit amounts."
+    assert str(e1.value) == "Total Debit amounts do not match total Credit amounts."
 
-    with pytest.raises(InvalidTaxChargeError) as e:
+    with pytest.raises(InvalidTaxChargeError) as e2:
         transaction.line_items.add(line_item4)
-    assert str(e.value) == "Compound JournalEntry Transactions cannot be charged Tax."
+    assert str(e2.value) == "Compound JournalEntry Transactions cannot be charged Tax."

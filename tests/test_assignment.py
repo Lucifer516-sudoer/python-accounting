@@ -205,10 +205,10 @@ def test_assignment_validation(session, entity, currency):
     assignment.transaction_id = transaction2.id
     assignment.assigned_id = transaction2.id
 
-    with pytest.raises(UnclearableTransactionError) as e:
+    with pytest.raises(UnclearableTransactionError) as e1:
         session.add(assignment)
     assert (
-        str(e.value)
+        str(e1.value)
         == """ClientReceipt Transaction cannot be cleared. Assignment
          assigned transaction type be must one of: Client Invoice, Supplier Bill, Journal Entry."""
     )
@@ -217,17 +217,17 @@ def test_assignment_validation(session, entity, currency):
     assignment.assigned_id = transaction1.id
     assignment.amount = Decimal("-1")
 
-    with pytest.raises(NegativeValueError) as e:
+    with pytest.raises(NegativeValueError) as e2:
         session.add(assignment)
-    assert str(e.value) == "Assignment amount cannot be negative."
+    assert str(e2.value) == "Assignment amount cannot be negative."
 
     session.expunge(assignment)
     assignment.amount = Decimal("5000")
 
-    with pytest.raises(InsufficientBalanceError) as e:
+    with pytest.raises(InsufficientBalanceError) as e3:
         session.add(assignment)
     assert (
-        str(e.value)
+        str(e3.value)
         == """ClientReceipt Transaction doesn't not have sufficient balance
          available to clear 5000 of the ClientInvoice Transaction."""
     )
@@ -256,18 +256,18 @@ def test_assignment_validation(session, entity, currency):
     assignment.assigned_id = transaction3.id
     assignment.amount = Decimal("15")
 
-    with pytest.raises(UnpostedAssignmentError) as e:
+    with pytest.raises(UnpostedAssignmentError) as e4:
         session.add(assignment)
-    assert str(e.value) == "An unposted Transaction cannot be cleared or assigned."
+    assert str(e4.value) == "An unposted Transaction cannot be cleared or assigned."
 
     session.expunge(assignment)
     transaction3.post(session)
 
     assignment.transaction_id = transaction3.id
 
-    with pytest.raises(SelfClearanceError) as e:
+    with pytest.raises(SelfClearanceError) as e5:
         session.add(assignment)
-    assert str(e.value) == "A Transaction cannot clear/be assigned to itself."
+    assert str(e5.value) == "A Transaction cannot clear/be assigned to itself."
 
     session.expunge(assignment)
     account4 = Account(
@@ -300,10 +300,10 @@ def test_assignment_validation(session, entity, currency):
 
     assignment.assigned_id = transaction4.id
 
-    with pytest.raises(InvalidAssignmentAccountError) as e:
+    with pytest.raises(InvalidAssignmentAccountError) as e6:
         session.add(assignment)
     assert (
-        str(e.value)
+        str(e6.value)
         == "The main account for the cleared and clearing Transaction must be the same."
     )
 
@@ -330,19 +330,19 @@ def test_assignment_validation(session, entity, currency):
 
     assignment.assigned_id = transaction5.id
 
-    with pytest.raises(InvalidClearanceEntryTypeError) as e:
+    with pytest.raises(InvalidClearanceEntryTypeError) as e7:
         session.add(assignment)
     assert (
-        str(e.value)
+        str(e7.value)
         == """Transaction Credit entry increases the outstaning balance
          on the account instead of reducing it."""
     )
 
     session.expunge(assignment)
     transaction5.compound = True
-    with pytest.raises(CompoundTransactionAssignmentError) as e:
+    with pytest.raises(CompoundTransactionAssignmentError) as e8:
         session.add(assignment)
-    assert str(e.value) == "A compound Transaction cannot be cleared or assigned."
+    assert str(e8.value) == "A compound Transaction cannot be cleared or assigned."
 
     session.expunge(assignment)
     session.expunge(transaction5)
@@ -380,10 +380,10 @@ def test_assignment_validation(session, entity, currency):
         amount=15,
     )
 
-    with pytest.raises(OverclearanceError) as e:
+    with pytest.raises(OverclearanceError) as e9:
         session.add(assignment)
     assert (
-        str(e.value)
+        str(e9.value)
         == "The ClientInvoice Transaction has already been completely cleared."
     )
 
@@ -431,9 +431,9 @@ def test_assignment_validation(session, entity, currency):
     )
     session.add(assignment)
 
-    with pytest.raises(MixedAssignmentError) as e:
+    with pytest.raises(MixedAssignmentError) as e10:
         session.flush()
-    assert str(e.value) == "A Transaction that has been Cleared cannot be Assigned."
+    assert str(e10.value) == "A Transaction that has been Cleared cannot be Assigned."
 
     session.expunge(assignment)
 
@@ -498,9 +498,9 @@ def test_assignment_validation(session, entity, currency):
         amount=5,
     )
 
-    with pytest.raises(MixedAssignmentError) as e:
+    with pytest.raises(MixedAssignmentError) as e11:
         session.add(assignment)
-    assert str(e.value) == "A Transaction that has been Assigned cannot be Cleared."
+    assert str(e11.value) == "A Transaction that has been Assigned cannot be Cleared."
 
 
 def test_bulk_assignment(session, entity, currency):

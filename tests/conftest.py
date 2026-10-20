@@ -1,15 +1,24 @@
-from datetime import datetime
+from collections.abc import Callable, Iterator
+from datetime import datetime, tzinfo
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
-from python_accounting.models import Entity, Base, Currency, LineItem
-from python_accounting.database.session import get_session
+from pytest import MonkeyPatch
+from sqlalchemy import Engine, create_engine
+from python_accounting.models import (
+    Account,
+    Base,
+    Currency,
+    Entity,
+    LineItem,
+    Transaction,
+)
+from python_accounting.database.session import AccountingSession, get_session
 from python_accounting.config import config
 
 
 @pytest.fixture
-def engine():
+def engine() -> Engine:
     database = config.database
     engine = create_engine(database["url"], echo=database["echo"])
     Base.metadata.create_all(engine)
@@ -17,32 +26,42 @@ def engine():
 
 
 @pytest.fixture
-def session(engine):
+def session(engine: Engine) -> Iterator[AccountingSession]:
     with get_session(engine) as session:
         yield session
 
 
 @pytest.fixture
-def entity(session):
+def entity(session: AccountingSession) -> Entity:
     entity = Entity(name="Test Entity")
     session.add(entity)
     session.commit()
-    return session.get(Entity, entity.id)
+    fetched = session.get(Entity, entity.id)
+    assert fetched is not None
+    return fetched
 
 
 @pytest.fixture
-def currency(session, entity):
+def currency(session: AccountingSession, entity: Entity) -> Currency:
     currency = Currency(name="US Dollars", code="USD", entity_id=entity.id)
     session.add(currency)
     session.commit()
-    return session.get(Currency, currency.id)
+    fetched = session.get(Currency, currency.id)
+    assert fetched is not None
+    return fetched
 
 
 @pytest.fixture
-def post_document(session):
+def post_document(session: AccountingSession) -> Callable[..., Transaction]:
     """Returns a function that posts a single line document to the given account."""
 
-    def post(document_type, account, line_account, date, amount):
+    def post(
+        document_type: type[Transaction],
+        account: Account,
+        line_account: Account,
+        date: datetime,
+        amount: str | int | Decimal,
+    ) -> Transaction:
         document = document_type(
             narration="Test document",
             transaction_date=date,
@@ -68,17 +87,17 @@ def post_document(session):
 
 
 @pytest.fixture
-def fixed_today(monkeypatch):
+def fixed_today(monkeypatch: MonkeyPatch) -> datetime:
     """Freezes today to midday on 31 January of the current year for reports and bulk assignment."""
     year = datetime.now().year
 
     class FixedDateTime(datetime):
         @classmethod
-        def now(cls, tz=None):
+        def now(cls, tz: tzinfo | None = None) -> "FixedDateTime":
             return cls(year, 1, 31, 12, tzinfo=tz)
 
         @classmethod
-        def today(cls):
+        def today(cls) -> "FixedDateTime":
             return cls.now()
 
     monkeypatch.setattr("python_accounting.utils.dates.datetime", FixedDateTime)

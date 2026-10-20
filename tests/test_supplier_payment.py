@@ -103,10 +103,10 @@ def test_supplier_payment_validation(session, entity, currency):
     session.add(line_item1)
     session.flush()
 
-    with pytest.raises(InvalidLineItemAccountError) as e:
+    with pytest.raises(InvalidLineItemAccountError) as e1:
         transaction.line_items.add(line_item1)
     assert (
-        str(e.value)
+        str(e1.value)
         == """SupplierPayment Transaction Line Item Account type must
          be one of: Bank."""
     )

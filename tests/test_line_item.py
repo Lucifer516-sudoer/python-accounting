@@ -229,10 +229,10 @@ def test_line_item_ledgers(session, entity, currency):
         line_item1.ledgers.append(line_item1.ledgers[0])
     assert str(e.value) == "Line Item ledgers cannot be Added manually."
 
-    with pytest.raises(HangingTransactionsError) as e:
+    with pytest.raises(HangingTransactionsError) as e1:
         session.delete(line_item1)
     assert (
-        str(e.value)
+        str(e1.value)
         == """The LineItem cannot be deleted because it has Transactions in
          the current reporting period."""
     )

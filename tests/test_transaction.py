@@ -93,10 +93,10 @@ def test_transaction_validation(session, entity, currency):
     transaction.transaction_date = today - relativedelta(years=1)
     session.add(transaction)
     last_year = datetime.today().year - 1
-    with pytest.raises(ClosedReportingPeriodError) as e:
+    with pytest.raises(ClosedReportingPeriodError) as e1:
         session.commit()
     assert (
-        str(e.value)
+        str(e1.value)
         == f"""Transaction cannot be recorded because Reporting
          Period: {last_year} <Period 2> is Closed."""
     )
@@ -106,10 +106,10 @@ def test_transaction_validation(session, entity, currency):
 
     session.add_all([previous_period, transaction])
 
-    with pytest.raises(AdjustingReportingPeriodError) as e:
+    with pytest.raises(AdjustingReportingPeriodError) as e2:
         session.commit()
     assert (
-        str(e.value)
+        str(e2.value)
         == f"""Only Journal Entry Transactions can be recorded for Reporting
          Period: {last_year} <Period 2> which has the Adjusting Status."""
     )
@@ -120,10 +120,10 @@ def test_transaction_validation(session, entity, currency):
     transaction = session.get(Transaction, transaction.id)
     transaction.transaction_type = Transaction.TransactionType.CASH_SALE
 
-    with pytest.raises(InvalidTransactionTypeError) as e:
+    with pytest.raises(InvalidTransactionTypeError) as e3:
         session.commit()
     assert (
-        str(e.value)
+        str(e3.value)
         == "The Transaction type cannot be changed as this would bypass subclass validations."
     )
 
@@ -161,9 +161,9 @@ def test_transaction_validation(session, entity, currency):
     session.add(transaction)
     transaction.post(session)
 
-    with pytest.raises(PostedTransactionError) as e:
+    with pytest.raises(PostedTransactionError) as e4:
         session.delete(transaction)
-    assert str(e.value) == "A Posted Transaction cannot be deleted."
+    assert str(e4.value) == "A Posted Transaction cannot be deleted."
 
 
 def test_transaction_isolation(session, entity, currency):
@@ -406,10 +406,10 @@ def test_transaction_line_items(session, entity, currency):
     line_item1.account_id = account1.id
     transaction.line_items.add(line_item1)
 
-    with pytest.raises(RedundantTransactionError) as e:
+    with pytest.raises(RedundantTransactionError) as e5:
         session.commit()
     assert (
-        str(e.value)
+        str(e5.value)
         == """Line Item <Test Transaction Account
          <Debit>: 10> Account is the same as the Transaction Account."""
     )
@@ -421,13 +421,13 @@ def test_transaction_line_items(session, entity, currency):
 
     transaction.post(session)
 
-    with pytest.raises(PostedTransactionError) as e:
+    with pytest.raises(PostedTransactionError) as e6:
         transaction.line_items.add(line_item2)
-    assert str(e.value) == "Cannot Add Line Items from a Posted Transaction."
+    assert str(e6.value) == "Cannot Add Line Items from a Posted Transaction."
 
-    with pytest.raises(PostedTransactionError) as e:
+    with pytest.raises(PostedTransactionError) as e7:
         transaction.line_items.remove(line_item1)
-    assert str(e.value) == "Cannot Remove Line Items from a Posted Transaction."
+    assert str(e7.value) == "Cannot Remove Line Items from a Posted Transaction."
 
     with pytest.raises(ValueError) as e:
         transaction.ledgers.remove(transaction.ledgers[0])
@@ -685,9 +685,9 @@ def test_transaction_posting(session, entity, currency):
     transaction.narration = "new narration"
     session.add(transaction)
 
-    with pytest.raises(PostedTransactionError) as e:
+    with pytest.raises(PostedTransactionError) as e8:
         session.commit()
-    assert str(e.value) == "A Posted Transaction cannot be modified."
+    assert str(e8.value) == "A Posted Transaction cannot be modified."
 
 
 def test_transaction_account_contribution(session, entity, currency):

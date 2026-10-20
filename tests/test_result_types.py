@@ -17,9 +17,12 @@ from decimal import Decimal
 
 import pytest
 
+from python_accounting.database.session import AccountingSession
 from python_accounting.models import (
     Account,
     Category,
+    Currency,
+    Entity,
     LineItem,
     Tax,
     Transaction,
@@ -27,7 +30,12 @@ from python_accounting.models import (
 from python_accounting.transactions import ClientInvoice
 
 
-def _post_invoice_on_revenue(session, entity, currency, revenue_category):
+def _post_invoice_on_revenue(
+    session: AccountingSession,
+    entity: Entity,
+    currency: Currency,
+    revenue_category: Category,
+) -> Account:
     """Mirrors tests/test_category.py:131-210: a client invoice whose line item
     lands on a revenue account, so the revenue account closes at -100."""
     client_category = Category(
@@ -240,7 +248,9 @@ class TestResultTypes:
         }
 
     @staticmethod
-    def _taxed_journal_entry(session, entity, currency, taxes):
+    def _taxed_journal_entry(
+        session: AccountingSession, entity: Entity, currency: Currency, taxes: list[int]
+    ) -> Transaction:
         """Mirrors tests/test_transaction.py:505-585: a journal entry with one
         line item per tax rate; returns the unposted transaction."""
         account1 = Account(
@@ -317,7 +327,9 @@ class TestStampRetirement:
     retired — reading them must raise ``AttributeError``.
     """
 
-    def _section_setup(self, session, entity, currency):
+    def _section_setup(
+        self, session: AccountingSession, entity: Entity, currency: Currency
+    ) -> Account:
         """Category + one revenue account with a posted invoice; returns the account."""
         category = Category(
             name="Revenue Category",

@@ -114,10 +114,10 @@ def test_account_validation(session, entity, currency):
     account.category_id = category.id
     session.add(account)
 
-    with pytest.raises(InvalidCategoryAccountTypeError) as e:
+    with pytest.raises(InvalidCategoryAccountTypeError) as e1:
         session.commit()
 
-    assert str(e.value) == "Cannot assign Receivable Account to Bank Category."
+    assert str(e1.value) == "Cannot assign Receivable Account to Bank Category."
 
     session.expunge(account)
     transaction = Transaction(
@@ -152,10 +152,10 @@ def test_account_validation(session, entity, currency):
     session.add(transaction)
     transaction.post(session)
 
-    with pytest.raises(HangingTransactionsError) as e:
+    with pytest.raises(HangingTransactionsError) as e2:
         session.delete(account)
     assert (
-        str(e.value)
+        str(e2.value)
         == """The Account cannot be deleted because it has Transactions in
          the current reporting period."""
     )

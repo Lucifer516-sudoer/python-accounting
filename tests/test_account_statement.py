@@ -13,16 +13,20 @@ with AttributeError (the missing method) instead of an ImportError at
 collection time.
 """
 
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 
 import pytest
 
 from python_accounting.exceptions import InvalidAccountTypeError
+from python_accounting.database.session import AccountingSession
 from python_accounting.models import (
     Account,
     Assignment,
     Balance,
+    Currency,
+    Entity,
     Transaction,
     account as account_models,
 )
@@ -34,7 +38,12 @@ from python_accounting.transactions import (
 )
 
 
-def _accounts(session, entity, currency, payable=False):
+def _accounts(
+    session: AccountingSession,
+    entity: Entity,
+    currency: Currency,
+    payable: bool = False,
+) -> tuple[Account, Account, Account]:
     """Mirrors tests/test_schedule_clearances.py::_accounts."""
     account = Account(
         name="Test supplier" if payable else "Test customer",
@@ -65,7 +74,13 @@ def _accounts(session, entity, currency, payable=False):
     return account, line_account, bank
 
 
-def _assign(session, subject, payment, date, amount):
+def _assign(
+    session: AccountingSession,
+    subject: Transaction | Balance,
+    payment: Transaction,
+    date: datetime,
+    amount: str | int | Decimal,
+) -> None:
     """Mirrors tests/test_schedule_clearances.py::_assign."""
     assignment = Assignment(
         assignment_date=date,
@@ -79,7 +94,12 @@ def _assign(session, subject, payment, date, amount):
     session.commit()
 
 
-def _post_running_entries(session, entity, currency, post_document):
+def _post_running_entries(
+    session: AccountingSession,
+    entity: Entity,
+    currency: Currency,
+    post_document: Callable[..., Transaction],
+) -> tuple[Account, list[Transaction]]:
     """Posts two cash sales and one cash purchase to a new bank account.
 
     Returns (bank, [sale1, sale2, purchase]) with ledger effects on `bank` of
@@ -257,10 +277,13 @@ class TestAccountStatement:
 
         for i, row in enumerate(running.transactions):
             legacy_entry = legacy["transactions"][i]
-            assert legacy_entry is row.entry
+            # Read the restamped values before the identity assert: `is`
+            # narrows legacy_entry to Transaction, which has no balance
+            # attribute statically (the legacy shim sets it via setattr).
             assert legacy_entry.balance == row.balance
             assert legacy_entry.debit == row.debit
             assert legacy_entry.credit == row.credit
+            assert legacy_entry is row.entry
 
         assert legacy["closing_balance"] == running.closing_balance == Decimal("120")
 

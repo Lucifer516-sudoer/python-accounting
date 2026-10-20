@@ -3,8 +3,18 @@ from decimal import Decimal
 
 import pytest
 
+from typing import TYPE_CHECKING, cast
+
 from python_accounting.exceptions import OverclearanceError
-from python_accounting.models import Account, Assignment, Balance, Transaction
+from python_accounting.database.session import AccountingSession
+from python_accounting.models import (
+    Account,
+    Assignment,
+    Balance,
+    Currency,
+    Entity,
+    Transaction,
+)
 from python_accounting.reports import AgingSchedule
 from python_accounting.transactions import (
     ClientInvoice,
@@ -13,8 +23,16 @@ from python_accounting.transactions import (
     SupplierPayment,
 )
 
+if TYPE_CHECKING:
+    from python_accounting.models.account import AccountType
 
-def _accounts(session, entity, currency, payable=False):
+
+def _accounts(
+    session: AccountingSession,
+    entity: Entity,
+    currency: Currency,
+    payable: bool = False,
+) -> tuple[Account, Account, Account]:
     account = Account(
         name="Test supplier" if payable else "Test customer",
         account_type=(
@@ -44,7 +62,13 @@ def _accounts(session, entity, currency, payable=False):
     return account, line_account, bank
 
 
-def _assign(session, subject, payment, date, amount):
+def _assign(
+    session: AccountingSession,
+    subject: Transaction | Balance,
+    payment: Transaction,
+    date: datetime,
+    amount: str | int | Decimal,
+) -> None:
     assignment = Assignment(
         assignment_date=date,
         transaction_id=payment.id,
@@ -57,7 +81,15 @@ def _assign(session, subject, payment, date, amount):
     session.commit()
 
 
-def _assert_schedule(session, account, subject, cutoff, cleared, bracket, start=None):
+def _assert_schedule(
+    session: AccountingSession,
+    account: Account,
+    subject: Transaction | Balance,
+    cutoff: datetime | None,
+    cleared: int,
+    bracket: str,
+    start: datetime | None = None,
+) -> None:
     statement = account.statement(session, start, cutoff, True)
     outstanding = 100 - cleared
     assert statement["total_amount"] == (100 if outstanding else 0)
@@ -68,7 +100,10 @@ def _assert_schedule(session, account, subject, cutoff, cleared, bracket, start=
         assert subject.cleared_amount == cleared
         assert subject.uncleared_amount == outstanding
 
-    aging = AgingSchedule(session, account.account_type, cutoff)
+    # Account.account_type is annotated Mapped[StrEnum] because the config
+    # enum class only exists at runtime (D-015); the value IS an AccountType
+    # member — cast across the stub seam.
+    aging = AgingSchedule(session, cast("AccountType", account.account_type), cutoff)
     expected = dict.fromkeys(AgingSchedule.brackets, 0)
     expected[bracket] = outstanding
     assert aging.balances == expected
@@ -77,7 +112,9 @@ def _assert_schedule(session, account, subject, cutoff, cleared, bracket, start=
         assert account.balances == expected
 
 
-def _statement_values(session, account, cutoff):
+def _statement_values(
+    session: AccountingSession, account: Account, cutoff: datetime
+) -> tuple[Decimal, Decimal, list[tuple[int, Decimal, Decimal, Decimal]]]:
     statement = account.statement(session, end_date=cutoff)
     return (
         statement["opening_balance"],
