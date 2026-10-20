@@ -69,10 +69,15 @@ Current totals: **mypy package 0 / mypy tests 0 / pyright 0 / pytest 148 /
 ruff format 93 files clean / ruff check All checks passed / mkdocs --strict
 zero warnings / pre-commit 18 hooks green.**
 
-Next up: T9.4 release prep — version 2.0.0, classifiers 3.10–3.13, CHANGELOG
-breaking lines (Python floor, delete->None return, exception spelling+alias,
-dead-code removal, __tablename__ explicitness, account stamps retired,
-get_engine factory), README docs links. No publish — user pushes the tag.
+T9.4 DONE (2026-10-20): release prep `4ec2edd` — version 2.0.0 (uv.lock
+regenerated for the bump), CHANGELOG 2.0.0 entry (breaking: Python floor,
+delete->None, account stamps retired, AccountingException spelling + alias,
+dead database_init/engine removal, explicit __tablename__; fixes:
+contribution() D-010, get_hash annotation; additions: typed result shapes,
+checker gates, MkDocs site), README refreshed (3.10+ floor, docs blurb,
+148 tests, v2.0.0 tag example). **The T0–T9 remodel is COMPLETE.** No publish
+— the user pushes the tag (`v2.0.0`); publish.yml untouched (trusted
+publishing is a follow-up).
 
 T5.2 patterns worth reusing (reports/): instance-level config-driven StrEnums
 are typed by per-subclass TYPE_CHECKING stub classes + `sections: "_Sections"`
