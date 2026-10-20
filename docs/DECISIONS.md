@@ -388,6 +388,56 @@ before. Vocabulary recorded in `GLOSSARY.md`.
 
 ---
 
+### D-017 — Post-2.0 deepening: period resolution, netting seam, line item total
+
+**Status:** accepted (grill round 1, user approved all defaults) · **Date:** 2026-10-20
+
+**Context.** Post-2.0 architecture review (report at
+`/tmp/opencode/architecture-review-20261020-1425.html`) ranked the remaining friction.
+The user picked the top cluster: period resolution ×4 spellings (finding 1), aggregate
+query construction beyond `signed_sum` (finding 2), the positional `get_dates` quadruple
+(finding 12), and the `line_item.amount * quantity` duplication (finding 15). All
+defaults approved; target is **zero existing-test edits**.
+
+**Decisions:**
+
+1. **Period seam = `ReportingPeriod.for_year(session, year)` classmethod**, next to
+   `get_period`. It consolidates exactly two sites that build the sentinel date
+   `datetime(year, session.entity.year_start, 1, 0, 0, 0)`: `utils/dates.py:get_dates`
+   and `Account.opening_balance`. **Descope correction (Q5):** the session mixin's
+   `_year_period` (accounting_functions.py:32-48) is NOT consolidated — it queries
+   `calendar_year == year` directly with the load-bearing `ignore_isolation=True`
+   execution option, not the sentinel-date construction; delegation would change the
+   query. The rollover listener's live clock (finding 10) stays, as a separate concern.
+2. **Netting seam = two per-model functions in `utils/money.py`**:
+   `net_ledger(session, *filters)` / `net_balance(session, *filters)`. The model, the
+   side column, the `Balance.BalanceType` enum and the aggregate query construction live
+   inside the seam; callers state only scope filters (entity/currency/account/date).
+   `signed_sum` stays public and is consumed internally. Callers migrated:
+   `Account.balance_movement`, `Account.opening_balance`, `Transaction.contribution`.
+   **Entity filter stays EXPLICIT in caller filters** — byte-identical SQL; no
+   auto-entity injection.
+3. **`get_dates` returns a NamedTuple `Dates`** (fields `start_date`, `end_date`,
+   `period_start`, `period_id`) from `utils/dates.py`. Positional unpacking keeps
+   working, so all ~9 call sites and tests stay byte-identical with zero edits.
+4. **Line item total = `line_item_total(line_item) -> Decimal`** in `utils/money.py`,
+   absorbing the four `line_item.amount * line_item.quantity` spellings:
+   `Transaction.amount` property, `Ledger._post_simple`, `JournalEntry.get_compound_entries`,
+   and `line_item_posted_tax_amount`'s own local.
+5. **`Balance.opening_trial_balance` hand-bucketing LEAVE as-is** + this note: it
+   sign-buckets (debit vs credit by sign of the balance) rather than nets by
+   `BalanceType`, so `net_balance` does not apply; the function is near-dead
+   (tests-only). Recorded so a future explorer doesn't re-suggest it.
+6. **Process:** docs first (this entry + GLOSSARY + PLAN Phase 10), then tester writes
+   seam tests RED (`tests/test_money.py`, `for_year`/`Dates` tests), then implement
+   period seam, then netting + line item total. AGENTS.md updated after each landing.
+
+**Load-bearing constraints honored:** `Decimal`-only money; hash-chain row shape
+untouched; `E711` sites untouched; import order untouched (money.py keeps models imports
+function-level/TYPE_CHECKING per the existing PLC0415 pattern); no schema change.
+
+---
+
 ## Probe index (scratch, `/tmp/opencode/`)
 
 | Artifact | Content |

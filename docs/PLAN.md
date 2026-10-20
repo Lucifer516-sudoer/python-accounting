@@ -164,6 +164,26 @@ Fact dossier: `/tmp/opencode/deepening-dossier.md`.
   `__tablename__` explicitness), README refreshed with docs links. **No publish —
   user pushes the tag.** `publish.yml` untouched (follow-up).
 
+## Phase 10 — Post-2.0 deepening (D-017, user-approved 2026-10-20)
+
+- **T10.1** Docs: D-017 in DECISIONS.md, GLOSSARY terms (period resolution, netting
+  seam, line item total), this Phase 10 addendum. Commit `Docs: record post-2.0
+  deepening design (D-017)`.
+- **T10.2** Tester writes seam tests RED: `tests/test_money.py` (net_ledger /
+  net_balance via post_document fixtures, line_item_total), `for_year` ==
+  `get_period(sentinel)` equivalence, `Dates` attribute access + positional unpack.
+- **T10.3** Period seam: `ReportingPeriod.for_year` classmethod; `utils/dates.py`
+  gains `Dates` NamedTuple, `get_dates` returns it (positional unpacking preserved);
+  `Account.opening_balance` delegates to `for_year`. Verify: zero existing-test edits,
+  full gate green. Commit `Refactor: consolidate period resolution (for_year, Dates)`.
+- **T10.4** Netting + line item total: `net_ledger`/`net_balance` in `utils/money.py`;
+  migrate `Account.balance_movement`, `Account.opening_balance`,
+  `Transaction.contribution`; `line_item_total` absorbs the four
+  `amount * quantity` spellings. Verify: zero existing-test edits, byte-identical SQL
+  (entity filter explicit), full gate green. Commit `Refactor: netting seam and line
+  item total in utils/money`.
+- **T10.5** AGENTS.md status update.
+
 ## Checkpoints requiring the user
 
 1. `delete -> None` (T4.2).

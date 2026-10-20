@@ -66,3 +66,17 @@ library already gets right; never replace it with anything narrower.
 `== None` soft-delete filters (SQLAlchemy `IS NULL` semantics), import order in
 `models/__init__.py`, the hash chain's per-row commits, `config.toml` at wheel root.
 Documented in AGENTS.md; never "fix" in passing.
+
+**Period resolution** — answering "which ReportingPeriod governs this date/year".
+Consolidated as `ReportingPeriod.for_year(session, year)` (D-017); `get_dates` and
+`Account.opening_balance` consume it. The session mixin's `_year_period` is deliberately
+NOT part of the seam (it queries with `ignore_isolation=True`, a different contract).
+
+**Netting seam** — the debit-minus-credit aggregate over a scoped set of rows, owned by
+`utils/money.py` (`net_ledger` / `net_balance`, built on `signed_sum`). Callers state
+only scope filters (entity/currency/account/date); the model, side column and
+`Balance.BalanceType` discrimination live inside the seam.
+
+**Line item total** — `line_item.amount * line_item.quantity`, the pre-tax extended
+amount of a line item. One spelling: `utils/money.py:line_item_total`. Tax handling
+stays separate (`line_item_tax_amount` / `line_item_posted_tax_amount`).
