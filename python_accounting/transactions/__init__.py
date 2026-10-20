@@ -1,4 +1,4 @@
-# tramsactions/__init__.py
+# transactions/__init__.py
 # Copyright (C) 2024 - 2028 the PythonAccounting authors and contributors
 # <see AUTHORS file>
 #
