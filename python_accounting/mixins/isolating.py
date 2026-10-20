@@ -10,8 +10,13 @@ Provides functionality to scope accounting objects to a single Entity.
 
 """
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
 from sqlalchemy import ForeignKey
+
+if TYPE_CHECKING:
+    from python_accounting.models.entity import Entity
 
 
 class IsolatingMixin:
@@ -27,4 +32,7 @@ class IsolatingMixin:
     @declared_attr
     def entity(self) -> Mapped["Entity"]:
         """Returns the Entity of the instance."""
-        return relationship("Entity", foreign_keys=[self.entity_id])
+        # String form (D-007): the bare attribute list `foreign_keys=[self.entity_id]`
+        # is rejected by both type checkers inside declared_attr; the interpolated
+        # string resolves at mapper-configuration time against the concrete class.
+        return relationship("Entity", foreign_keys=f"{self.__name__}.entity_id")
