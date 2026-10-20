@@ -11,8 +11,25 @@ Represents the equality of all the credit and debit balances of an Entity.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
+from strenum import StrEnum
 from python_accounting.reports.financial_statement import FinancialStatement
 from python_accounting.utils.dates import get_dates
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+
+    class _Sections(StrEnum):
+        """Stub for the config-driven sections enum (D-015, instance level)."""
+
+        INCOME_STATEMENT = "Income Statement"
+        BALANCE_SHEET = "Balance Sheet"
+
+    class _Results(StrEnum):
+        """Stub for the config-driven results enum (D-015, instance level)."""
+
+        DEBIT = "Total Debits"
+        CREDIT = "Total Credits"
 
 
 class TrialBalance(FinancialStatement):
@@ -21,7 +38,13 @@ class TrialBalance(FinancialStatement):
     config = "trial_balance"
     """(str): The configuration section for the report."""
 
-    def __init__(self, session, end_date: datetime = None) -> None:
+    if TYPE_CHECKING:
+        sections: "_Sections"
+        results: "_Results"
+
+    def __init__(
+        self, session: "AccountingSession", end_date: datetime | None = None
+    ) -> None:
         self.start_date, self.end_date, _, _ = get_dates(session, None, end_date)
         super().__init__(session)
 

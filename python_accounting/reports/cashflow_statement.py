@@ -11,10 +11,30 @@ Represents the movement of liquid funds of an Entity.
 """
 
 from datetime import datetime
+from decimal import Decimal
+from typing import TYPE_CHECKING
+from strenum import StrEnum
 from python_accounting.reports.financial_statement import FinancialStatement
 from python_accounting.config import config
 from python_accounting.utils.dates import get_dates
 from python_accounting.models import Account
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+
+    class _Sections(StrEnum):
+        """Stub for the config-driven sections enum (D-015, instance level)."""
+
+        OPERATING_CASH_FLOW = "Operating Cash Flow"
+        INVESTMENT_CASH_FLOW = "Investment Cash Flow"
+        FINANCING_CASH_FLOW = "Financing Cash Flow"
+        NET_CASH_FLOW = "Net Cash Flow"
+
+    class _Results(StrEnum):
+        """Stub for the config-driven results enum (D-015, instance level)."""
+
+        END_CASH_BALANCE = "Ending Cash Balance"
+        CASHBOOK_BALANCE = "Cashbook Balance"
 
 
 class CashflowStatement(FinancialStatement):
@@ -23,11 +43,18 @@ class CashflowStatement(FinancialStatement):
     config = "cashflow_statement"
     """config (str): The configuration section for the report."""
 
-    sub_sections: dict
+    sub_sections: dict[str, list[str]]
     """sub_sections (dict): The categories of the contents of the sections of the report."""
 
+    if TYPE_CHECKING:
+        sections: "_Sections"
+        results: "_Results"
+
     def __init__(
-        self, session, start_date: datetime = None, end_date: datetime = None
+        self,
+        session: "AccountingSession",
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> None:
         self.start_date, self.end_date, _, _ = get_dates(session, start_date, end_date)
         super().__init__(session)
@@ -55,7 +82,7 @@ class CashflowStatement(FinancialStatement):
         # Net Cash Flow
         self.balances["NET_CASH_FLOW"]["Net Cash Flow"] = self.totals[
             "NET_CASH_FLOW"
-        ] = sum(v for v in self.totals.values())
+        ] = sum(self.totals.values(), Decimal(0))
 
         # Ending Cash Balance
         self.result_amounts[self.results.END_CASH_BALANCE.name] = (
@@ -88,8 +115,8 @@ class CashflowStatement(FinancialStatement):
 
     def _get_sections(
         self,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         full_balance: bool = True,
     ) -> None:
         for section, sub_sections in self.sub_sections.items():
@@ -108,7 +135,7 @@ class CashflowStatement(FinancialStatement):
                     self.balances[section][label[1]] = balances["movement"]
                     self.totals[section] += balances["movement"]
 
-    def _print_section(self, section, factor=1) -> str:
+    def _print_section(self, section: StrEnum, factor: int = 1) -> str:
         content = f"\n{section.value}"
         for sub_section, total in self.balances[section.name].items():
             label = f"\n{self.indent}{sub_section}"

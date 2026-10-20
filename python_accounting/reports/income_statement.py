@@ -10,39 +10,73 @@ Represents the financial performance of an Entity for a given period.
 
 """
 
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+from typing import TYPE_CHECKING, ClassVar, cast
 from strenum import StrEnum
 from python_accounting.models import Account
 from python_accounting.reports.financial_statement import FinancialStatement
 from python_accounting.utils.dates import get_dates
+
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+
+    # Account.AccountType is a ClassVar on the mapped class and cannot be used
+    # as a type expression (DECISIONS.md D-015), so the stub class is imported.
+    from python_accounting.models.account import AccountTypeStub
+
+    class _Sections(StrEnum):
+        """Stub for the config-driven sections enum (D-015, instance level)."""
+
+        OPERATING_REVENUES = "Operating Revenues"
+        NON_OPERATING_REVENUES = "Non Operating Revenues"
+        OPERATING_EXPENSES = "Operating Expenses"
+        NON_OPERATING_EXPENSES = "Non Operating Expenses"
+
+    class _Results(StrEnum):
+        """Stub for the config-driven results enum (D-015, instance level)."""
+
+        TOTAL_REVENUE = "Total Revenue"
+        GROSS_PROFIT = "Gross Profit"
+        TOTAL_EXPENSES = "Total Expenses"
+        NET_PROFIT = "Net Profit"
 
 
 class IncomeStatement(FinancialStatement):
     """
     This class represents the Income Statement/Profit and Loss of a given Entity."""
 
-    Accounts = StrEnum(
-        "Accounts",
-        {
-            a.name: a.value
-            for a in [
-                Account.AccountType.OPERATING_REVENUE,
-                Account.AccountType.NON_OPERATING_REVENUE,
-                Account.AccountType.OPERATING_EXPENSE,
-                Account.AccountType.DIRECT_EXPENSE,
-                Account.AccountType.OVERHEAD_EXPENSE,
-                Account.AccountType.OTHER_EXPENSE,
-            ]
-        },
+    Accounts: ClassVar["type[AccountTypeStub]"] = cast(
+        "type[AccountTypeStub]",
+        StrEnum(
+            "Accounts",
+            [
+                (a.name, a.value)
+                for a in [
+                    Account.AccountType.OPERATING_REVENUE,
+                    Account.AccountType.NON_OPERATING_REVENUE,
+                    Account.AccountType.OPERATING_EXPENSE,
+                    Account.AccountType.DIRECT_EXPENSE,
+                    Account.AccountType.OVERHEAD_EXPENSE,
+                    Account.AccountType.OTHER_EXPENSE,
+                ]
+            ],
+        ),
     )
     """(Account.AccountType): The Account types allowed to be in included in the report."""
 
     config = "income_statement"
     """(str): The configuration section for the report."""
 
+    if TYPE_CHECKING:
+        sections: "_Sections"
+        results: "_Results"
+
     def __init__(
-        self, session, start_date: datetime = None, end_date: datetime = None
+        self,
+        session: "AccountingSession",
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> None:
         self.start_date, self.end_date, _, _ = get_dates(session, start_date, end_date)
         super().__init__(session)
@@ -91,7 +125,9 @@ class IncomeStatement(FinancialStatement):
 
     @staticmethod
     def net_profit(
-        session, start_date: datetime = None, end_date: datetime = None
+        session: "AccountingSession",
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> Decimal:
         """
         Get the value of net profit for the given period.
@@ -108,7 +144,7 @@ class IncomeStatement(FinancialStatement):
         return (
             Account.section_balances(
                 session,
-                IncomeStatement.Accounts,
+                list(IncomeStatement.Accounts),
                 start_date,
                 end_date,
                 True,

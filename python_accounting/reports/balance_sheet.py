@@ -11,42 +11,72 @@ Represents the financial position of an Entity.
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING, ClassVar, cast
 from strenum import StrEnum
 from python_accounting.utils.dates import get_dates
 from python_accounting.reports.financial_statement import FinancialStatement
 
 from python_accounting.models import Account
 
+if TYPE_CHECKING:
+    from python_accounting.database.session import AccountingSession
+
+    # Account.AccountType is a ClassVar on the mapped class and cannot be used
+    # as a type expression (DECISIONS.md D-015), so the stub class is imported.
+    from python_accounting.models.account import AccountTypeStub
+
+    class _Sections(StrEnum):
+        """Stub for the config-driven sections enum (D-015, instance level)."""
+
+        ASSETS = "Assets"
+        LIABILITIES = "Liabilities"
+        EQUITY = "Equity"
+
+    class _Results(StrEnum):
+        """Stub for the config-driven results enum (D-015, instance level)."""
+
+        NET_ASSETS = "Net Assets"
+        TOTAL_EQUITY = "Total Equity"
+
 
 class BalanceSheet(FinancialStatement):
     """This class represents Financial Position/Balance Sheet of a given Entity."""
 
-    Accounts = StrEnum(
-        "Accounts",
-        {
-            a.name: a.value
-            for a in [
-                Account.AccountType.NON_CURRENT_ASSET,
-                Account.AccountType.CONTRA_ASSET,
-                Account.AccountType.INVENTORY,
-                Account.AccountType.BANK,
-                Account.AccountType.CURRENT_ASSET,
-                Account.AccountType.RECEIVABLE,
-                Account.AccountType.NON_CURRENT_LIABILITY,
-                Account.AccountType.CONTROL,
-                Account.AccountType.CURRENT_LIABILITY,
-                Account.AccountType.PAYABLE,
-                Account.AccountType.EQUITY,
-                Account.AccountType.RECONCILIATION,
-            ]
-        },
+    Accounts: ClassVar["type[AccountTypeStub]"] = cast(
+        "type[AccountTypeStub]",
+        StrEnum(
+            "Accounts",
+            [
+                (a.name, a.value)
+                for a in [
+                    Account.AccountType.NON_CURRENT_ASSET,
+                    Account.AccountType.CONTRA_ASSET,
+                    Account.AccountType.INVENTORY,
+                    Account.AccountType.BANK,
+                    Account.AccountType.CURRENT_ASSET,
+                    Account.AccountType.RECEIVABLE,
+                    Account.AccountType.NON_CURRENT_LIABILITY,
+                    Account.AccountType.CONTROL,
+                    Account.AccountType.CURRENT_LIABILITY,
+                    Account.AccountType.PAYABLE,
+                    Account.AccountType.EQUITY,
+                    Account.AccountType.RECONCILIATION,
+                ]
+            ],
+        ),
     )
     """(Account.AccountType): The Account types allowed to be in included in the report."""
 
     config = "balance_sheet"
     """(str): The configuration section for the report."""
 
-    def __init__(self, session, end_date: datetime = None) -> None:
+    if TYPE_CHECKING:
+        sections: "_Sections"
+        results: "_Results"
+
+    def __init__(
+        self, session: "AccountingSession", end_date: datetime | None = None
+    ) -> None:
         from python_accounting.reports.income_statement import (
             IncomeStatement,
         )
