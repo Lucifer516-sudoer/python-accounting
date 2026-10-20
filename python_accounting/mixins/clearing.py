@@ -12,7 +12,14 @@ Provides functionality to clearable Transactions for assignment to assignable Tr
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from sqlalchemy import func, select
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Mapped
+
+    from python_accounting.database.session import AccountingSession
+    from python_accounting.models.assignment import Assignment
 
 
 class ClearingMixin:
@@ -21,7 +28,17 @@ class ClearingMixin:
     assignable Transactions.
     """
 
-    def cleared(self, session, end_date: datetime = None) -> Decimal:
+    if TYPE_CHECKING:
+        # Host-class attributes this mixin relies on. Declared under
+        # TYPE_CHECKING only: at runtime the concrete classes (Transaction STI
+        # subclasses, Balance) provide them via their own mappings, and the
+        # skipped block keeps SQLAlchemy from seeing duplicate declarations.
+        id: Mapped[int]
+        entity_id: Mapped[int]
+
+    def cleared(
+        self, session: "AccountingSession", end_date: datetime | None = None
+    ) -> Decimal:
         """
         Gets how much of the Transaction amount has been cleared by assignable Transactions.
 
@@ -46,9 +63,9 @@ class ClearingMixin:
         if end_date is not None:
             query = query.filter(Assignment.assignment_date <= end_date)
 
-        return query.scalar() or 0
+        return Decimal(query.scalar() or 0)
 
-    def clearances(self, session) -> list:
+    def clearances(self, session: "AccountingSession") -> list["Assignment"]:
         """
         Gets the assignments made to clear the Transaction.
 
@@ -62,13 +79,15 @@ class ClearingMixin:
             Assignment,
         )
 
-        return session.scalars(
-            select(Assignment)
-            .filter(Assignment.assigned_id == self.id)
-            .filter(Assignment.assigned_type == self.__class__.__name__)
-        ).all()
+        return list(
+            session.scalars(
+                select(Assignment)
+                .filter(Assignment.assigned_id == self.id)
+                .filter(Assignment.assigned_type == self.__class__.__name__)
+            ).all()
+        )
 
-    def unclear(self, session) -> None:
+    def unclear(self, session: "AccountingSession") -> None:
         """
         Removes all assignments made to clear this Transaction.
 

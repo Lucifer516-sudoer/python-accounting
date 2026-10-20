@@ -1388,7 +1388,9 @@ def test_receivable_account_schedule(session, entity, currency):
         assigned_id=transaction.id,
         assigned_type=transaction.__class__.__name__,
         entity_id=entity.id,
-        amount=85.6,
+        # Decimal, not float: Assignment.amount is validated pre-flush, where
+        # the DECIMAL column has not coerced yet, and Decimal + float raises.
+        amount=Decimal("85.6"),
     )
     session.add(assignment2)
     session.flush()
