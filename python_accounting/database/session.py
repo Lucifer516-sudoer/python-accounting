@@ -10,6 +10,10 @@ Provides accounting specific overrides for some sqlalchemy session methods.
 
 """
 
+from typing import Any
+
+from sqlalchemy import Engine
+from sqlalchemy.engine import Connection
 from sqlalchemy.orm.session import Session
 
 from python_accounting.models import Entity
@@ -31,11 +35,13 @@ class AccountingSession(
 
     entity: Entity
 
-    def __init__(self, bind=None, info=None) -> None:
+    def __init__(
+        self, bind: "Engine | Connection | None" = None, info: Any = None
+    ) -> None:
         super().__init__(bind=bind, info=info)
 
 
-def get_session(engine) -> "AccountingSession":
+def get_session(engine: Engine) -> "AccountingSession":
     """
     Construct the accounting session.
 

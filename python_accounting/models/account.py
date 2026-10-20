@@ -163,6 +163,14 @@ class AccountStatement:
 class Account(IsolatingMixin, Recyclable):
     """Represents an account which groups related Transactions."""
 
+    if TYPE_CHECKING:
+        # Transient per-session numbering counter, set by the
+        # transient_to_pending listener in database/event_listeners.py and read
+        # via getattr(self, "session_index", 1). Declared under TYPE_CHECKING
+        # only: at runtime it is a plain instance attribute, and a bare
+        # annotation on a mapped class would require __allow_unmapped__.
+        session_index: int
+
     __tablename__ = "account"
 
     # Chart of Accounts types

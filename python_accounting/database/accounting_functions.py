@@ -10,17 +10,36 @@ This mixin providses accounting specific functionality to the standard sqlachemy
 """
 
 from datetime import datetime
-from sqlalchemy import orm, select, func
-from python_accounting.models import ReportingPeriod
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from python_accounting.models import Entity, ReportingPeriod
 
 
-class AccountingFunctionsMixin:
+class AccountingFunctionsMixin(Session):
     """
     Accounting functions class.
 
+    Attributes:
+        entity (Entity): The Entity currently associated with the session. Set by
+            EventListenersMixin's transient_to_pending listener; read here to scope
+            reporting-period queries.
     """
 
-    def _year_period(self, year: int) -> orm.Mapped["ReportingPeriod"]:
+    entity: "Entity"
+
+    def _year_period(self, year: int) -> "ReportingPeriod | None":
+        """
+        Gets the ReportingPeriod for the given calendar year, ignoring entity isolation
+        (periods are looked up for the session's entity explicitly).
+
+        Args:
+            year (int): The calendar year of the period.
+
+        Returns:
+            ReportingPeriod: The period for the year, if it exists.
+        """
         return self.scalars(
             select(ReportingPeriod)
             .where(ReportingPeriod.calendar_year == year)
@@ -29,6 +48,13 @@ class AccountingFunctionsMixin:
         ).first()
 
     def _set_reporting_period(self) -> None:
+        """
+        Sets the session Entity's reporting period to the current year, creating and
+        rolling forward periods as needed.
+
+        Returns:
+            None
+        """
         year = datetime.today().year
         existing = self._year_period(year)
 
@@ -62,5 +88,9 @@ class AccountingFunctionsMixin:
             )
             self.flush()
 
-            self.entity.reporting_period = self._year_period(year)
+            # The period was just created and flushed, so the lookup cannot
+            # return None here.
+            period = self._year_period(year)
+            assert period is not None
+            self.entity.reporting_period = period
         self.commit()

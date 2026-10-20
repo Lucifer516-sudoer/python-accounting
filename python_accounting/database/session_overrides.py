@@ -12,23 +12,32 @@ accounting specific behavior. It also provides custom methods specific to accoun
 """
 
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from sqlalchemy import select
-from sqlalchemy.orm import Mapper
+from sqlalchemy.orm import Mapper, Session
 
 from python_accounting.models import Recyclable, Recycled, Entity, Assignment
 from python_accounting.exceptions import SessionEntityError
 
-# The model type fetched by SessionOverridesMixin.get; Recyclable is the root
-# mapped class that carries the primary key (id).
-_O = TypeVar("_O", bound="Recyclable")
+# The model type fetched by SessionOverridesMixin.get. Unbound to mirror the
+# base Session.get TypeVar exactly (a bound TypeVar is an incompatible
+# generic override); the primary-key surface is recovered at the single use
+# site below.
+_O = TypeVar("_O")
 
 
-class SessionOverridesMixin:
+class SessionOverridesMixin(Session):
     """
     Session overrides class.
+
+    Attributes:
+        entity (Entity): The Entity currently associated with the session. Set by
+            EventListenersMixin's transient_to_pending listener; read here to scope
+            deletes to the session's Entity.
     """
+
+    entity: "Entity"
 
     def get(
         self, entity: "type[_O] | Mapper[_O]", ident: Any, **kwargs: Any
@@ -48,43 +57,54 @@ class SessionOverridesMixin:
         if isinstance(entity, Mapper):
             entity = entity.class_
 
-        return self.scalar(
-            select(entity).where(entity.id == ident).execution_options(**kwargs)
+        # Every accounting model carries the Recyclable primary-key surface;
+        # the caller's entity argument determines the actual type.
+        model = cast("type[Recyclable]", entity)
+        return cast(
+            "_O | None",
+            self.scalar(
+                select(model).where(model.id == ident).execution_options(**kwargs)
+            ),
         )
 
-    def delete(self, instance) -> bool:
+    def delete(self, instance: object) -> None:
         """Overrides the sqlalchemy delete method to enable model recycling.
 
         Args:
             instance (`DeclarativeBase`): The model instance.
 
         Returns:
-            True if successful, else False.
+            None
 
         Raises:
             SessionEntityError: If the instance being deleted is the session Entity.
         """
 
         if isinstance(instance, Assignment):
-            return self.erase(instance)
+            self.erase(instance)
+            return
 
-        if hasattr(instance, "validate_delete"):
-            instance.validate_delete(self)
+        validate_delete = getattr(instance, "validate_delete", None)
+        if validate_delete is not None:
+            validate_delete(self)
 
         if isinstance(instance, Entity) and instance.id == self.entity.id:
             raise SessionEntityError
-        instance.deleted_at = instance.updated_at = datetime.now()
+
+        # Every non-Assignment instance routed here is a soft-deletable model,
+        # i.e. a Recyclable subclass.
+        recyclable = cast("Recyclable", instance)
+        recyclable.deleted_at = recyclable.updated_at = datetime.now()
 
         self.add(
             Recycled(
-                recycled_id=instance.id,
+                recycled_id=recyclable.id,
                 entity_id=self.entity.id,
             )
         )
         self.commit()
-        return True
 
-    def restore(self, instance) -> bool:
+    def restore(self, instance: Recyclable) -> bool:
         """Restore a deleted/recycled model instance.
 
         Args:
@@ -104,31 +124,28 @@ class SessionOverridesMixin:
         self.commit()
         return True
 
-    def destroy(self, instance) -> bool:
+    def destroy(self, instance: Recyclable) -> None:
         """Mark a model instance as destroyed, i.e. permanently delete.
 
         Args:
             instance (`DeclarativeBase`): The model instance.
 
         Returns:
-            True.
+            None.
 
         """
 
         instance.destroyed_at = instance.updated_at = datetime.now()
 
         self.commit()
-        return True
 
-    def erase(self, instance) -> bool:
+    def erase(self, instance: "Recyclable | Assignment") -> None:
         """Completely remove an instance from the database.
 
         Args:
             instance (`DeclarativeBase`): The model instance.
 
         Returns:
-            True.
-
+            None.
         """
         super().delete(instance)
-        return True

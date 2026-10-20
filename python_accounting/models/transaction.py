@@ -104,6 +104,14 @@ class TransactionTax(TypedDict):
 class Transaction(IsolatingMixin, Recyclable):
     """Represents a Transaction in the sense of an original source document."""
 
+    if TYPE_CHECKING:
+        # Transient per-session numbering counter, set by the
+        # transient_to_pending listener in database/event_listeners.py and read
+        # via getattr(self, "session_index", 1). Declared under TYPE_CHECKING
+        # only: at runtime it is a plain instance attribute, and a bare
+        # annotation on a mapped class would require __allow_unmapped__.
+        session_index: int
+
     # Transaction types
     TransactionType = transaction_type_enum
     """(StrEnum): Transaction Types representing standard source document Transactions."""
