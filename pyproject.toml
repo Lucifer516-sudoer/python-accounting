@@ -54,12 +54,19 @@ lint = [
     "types-toml>=0.10.8.20260518",
 ]
 docs = [
-    "sphinx-autoapi>=3.0.0,<4.0",
-    "sphinx-rtd-theme>=2.0.0,<3.0",
-    "sphinx>=7.2.6,<8.0",
-    "myst-parser>=2.0.0,<3.0",
+    "mkdocs>=1.6.0,<2.0",
+    "mkdocs-material>=9.5.0,<10.0",
+    "mkdocstrings[python]>=0.26.0,<1.0",
+    "mkdocs-gen-files>=0.5.0,<1.0",
+    "mkdocs-literate-nav>=0.6.0,<1.0",
+    "mkdocs-section-index>=0.3.0,<1.0",
+    "griffe-typingdoc>=0.1.0,<1.0",
+    # mkdocstrings 0.30's Highlighter predates pymdown-extensions 12's
+    # Highlight.__init__ signature (missing `md`); pinned until mkdocstrings
+    # ships a compatible release.
+    "pymdown-extensions>=10.0,<12.0",
 ]
-# Kept so `docs/conf.py` can pickle the sphinx environment for incremental builds.
+# Sphinx-era comment removed with the Sphinx toolchain (T9.3).
 dev = [{ include-group = "test" }, { include-group = "lint" }, "dill>=0.3.8,<0.4"]
 
 [build-system]
@@ -105,7 +112,7 @@ check_untyped_defs = true
 # and is what the rest of the ecosystem formats to.
 line-length = 88
 target-version = "py310"
-extend-exclude = ["docs/_build", "dist", ".venv"]
+extend-exclude = ["docs/_build", "site", "dist", ".venv"]
 
 [tool.ruff.format]
 docstring-code-format = false

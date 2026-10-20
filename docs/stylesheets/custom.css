@@ -1,0 +1,159 @@
+/* python-accounting docs — fluid layer.
+ * Tasteful motion on top of Material's built-in micro-animations:
+ * gradient accents, smooth reveals, breathing hero. Respects
+ * prefers-reduced-motion throughout. */
+
+:root {
+  --pa-gradient: linear-gradient(
+    120deg,
+    #009485 0%,
+    #14b8a6 25%,
+    #38bdf8 50%,
+    #14b8a6 75%,
+    #f59e0b 100%
+  );
+  --pa-gradient-size: 300% 300%;
+}
+
+/* ---------- Gradient text ---------- */
+
+.gradient-text {
+  background: var(--pa-gradient);
+  background-size: var(--pa-gradient-size);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pa-gradient-shift 8s ease infinite;
+}
+
+@keyframes pa-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  padding: 2.2rem 0 1.6rem;
+  text-align: center;
+}
+
+.hero-inner {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.6rem;
+}
+
+.hero .md-button {
+  margin-top: 1.2rem;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease;
+}
+
+.hero .md-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 148, 133, 0.25);
+}
+
+/* ---------- Content reveal ---------- */
+
+.md-content__inner {
+  animation: pa-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pa-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Cards ---------- */
+
+.grid.cards > ul > li {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.grid.cards > ul > li:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 148, 133, 0.45);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Code blocks ---------- */
+
+.md-typeset code {
+  transition: background-color 0.2s ease;
+}
+
+.md-typeset .highlight:hover pre > code {
+  background-color: rgba(0, 148, 133, 0.06);
+}
+
+/* ---------- Admonitions ---------- */
+
+.md-typeset .admonition,
+.md-typeset details {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.md-typeset .admonition:hover,
+.md-typeset details[open]:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+}
+
+/* ---------- Tables ---------- */
+
+.md-typeset table:not([class]) tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+/* ---------- Scroll progress (injected by fluid.js) ---------- */
+
+.pa-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  background: var(--pa-gradient);
+  background-size: var(--pa-gradient-size);
+  animation: pa-gradient-shift 8s ease infinite;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-text,
+  .pa-scroll-progress {
+    animation: none;
+  }
+
+  .md-content__inner {
+    animation: none;
+  }
+
+  .grid.cards > ul > li,
+  .hero .md-button,
+  .md-typeset .admonition,
+  .md-typeset details {
+    transition: none;
+  }
+}

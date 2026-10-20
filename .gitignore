@@ -26,3 +26,6 @@ docs/_build/
 .vscode/
 *.sqlite
 *.log
+
+# MkDocs build output
+site/

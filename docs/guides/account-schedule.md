@@ -1,7 +1,7 @@
 ## Account Schedule
 Account Schedules are similar to statements in that the present chronological records of transactions that have been posted to an account, the difference being that only transactions with outstanding balances, i.e. those that have not been cleared completely are displayed. Schedules can only be created for Account::RECEIVABLE and Account::PAYABLE account types.
 
-**Parameters**: The same as [Account Statements](statements.md), but with the additional boolean `schedule = True`.
+**Parameters**: The same as [Account Statements](account-statement.md), but with the additional boolean `schedule = True`.
 
 
 **Returns** A dictionary with:
