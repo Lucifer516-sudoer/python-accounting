@@ -10,6 +10,7 @@ Represents an Account, the basic unit of accounting that groups the transactions
 """
 
 import warnings
+from dataclasses import dataclass
 from decimal import Decimal
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
@@ -18,7 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, aliased
 from sqlalchemy import String, ForeignKey, Enum, func, inspect, select, or_, exc
 from python_accounting.models.recyclable import Recyclable
 from python_accounting.models.reporting_period import ReportingPeriod
-from python_accounting.mixins import IsolatingMixin
+from python_accounting.mixins import IsolatingMixin, ClearingMixin
 from python_accounting.config import config
 from python_accounting.exceptions import (
     InvalidCategoryAccountTypeError,
@@ -31,8 +32,10 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from python_accounting.database.session import AccountingSession
+    from python_accounting.models.balance import Balance
     from python_accounting.models.category import Category
     from python_accounting.models.currency import Currency
+    from python_accounting.models.transaction import Transaction
 
     class AccountType(StrEnum):
         """Stub mirroring the config-driven AccountType members.
@@ -97,6 +100,64 @@ class SectionBalances(TypedDict):
     """(Decimal): The sum of the closing balances of Accounts in the section."""
     categories: dict[str, SectionCategory]
     """(dict): The Accounts belonging to the section separated by Category."""
+
+
+@dataclass(frozen=True)
+class ScheduleRow:
+    """One outstanding entry in :meth:`Account.schedule_outstanding`.
+
+    ``entry`` is the outstanding object itself: a clearable ``Transaction``, or
+    a ``Balance`` brought down from a previous Reporting Period.
+    """
+
+    entry: "Transaction | Balance"
+    """(Transaction | Balance): The outstanding Transaction or opening Balance."""
+    cleared_amount: Decimal
+    """(Decimal): The amount of the entry cleared as at the schedule end date."""
+    uncleared_amount: Decimal
+    """(Decimal): The amount of the entry still outstanding as at the end date."""
+    age: int
+    """(int): The age of the entry in days, as at the schedule end date."""
+
+
+@dataclass(frozen=True)
+class OutstandingSchedule:
+    """Result of :meth:`Account.schedule_outstanding`."""
+
+    transactions: list[ScheduleRow]
+    """(list of ScheduleRow): The outstanding entries, FIFO by transaction date."""
+    total_amount: Decimal
+    """(Decimal): The total amount of the entries in the schedule."""
+    cleared_amount: Decimal
+    """(Decimal): The amount of the entries in the schedule that has been cleared."""
+    uncleared_amount: Decimal
+    """(Decimal): The amount of the entries in the schedule still outstanding."""
+
+
+@dataclass(frozen=True)
+class StatementRow:
+    """One posted entry in :meth:`Account.statement_running`."""
+
+    entry: "Transaction"
+    """(Transaction): The posted Transaction."""
+    balance: Decimal
+    """(Decimal): The running balance of the Account after the entry."""
+    debit: Decimal
+    """(Decimal): The debit contribution of the entry to the Account."""
+    credit: Decimal
+    """(Decimal): The credit contribution of the entry to the Account."""
+
+
+@dataclass(frozen=True)
+class AccountStatement:
+    """Result of :meth:`Account.statement_running`."""
+
+    opening_balance: Decimal
+    """(Decimal): The balance of the Account at the beginning of the period."""
+    transactions: list[StatementRow]
+    """(list of StatementRow): The posted Transactions, in transaction date order."""
+    closing_balance: Decimal
+    """(Decimal): The running balance after the last entry (0 if there are none)."""
 
 
 class Account(IsolatingMixin, Recyclable):
@@ -347,6 +408,201 @@ class Account(IsolatingMixin, Recyclable):
             session, start_date, end_date
         )
 
+    def schedule_outstanding(
+        self,
+        session: "AccountingSession",
+        end_date: datetime | None = None,
+    ) -> OutstandingSchedule:
+        """
+        Gets the outstanding clearable Transactions of the Account, aged as at the
+        end date, on a FIFO basis.
+
+        Args:
+            session (Session): The accounting session to which the Account belongs.
+            end_date (datetime): The latest transaction date for Transaction amounts to
+                be included in the schedule. Assignments are included through the end date.
+
+        Raises:
+            InvalidAccountTypeError: If the Account type is not Receivable or Payable.
+
+        Returns:
+            OutstandingSchedule: The outstanding entries (clearable Transactions and
+            opening Balances) of the Account as at the end date, each with its cleared,
+            uncleared and age values, together with the total, cleared and uncleared
+            amounts of the schedule.
+        """
+        from python_accounting.models import (
+            Assignment,
+            Balance,
+            Ledger,
+            Transaction,
+        )
+
+        if self.account_type not in [
+            Account.AccountType.RECEIVABLE,
+            Account.AccountType.PAYABLE,
+        ]:
+            raise InvalidAccountTypeError(
+                "Only Receivable and Payable Accounts can have a statement/schedule."
+            )
+        _, end_date, _, period_id = get_dates(session, None, end_date)
+
+        rows: list[ScheduleRow] = []
+        total_amount: Decimal = Decimal(0)
+        cleared_total: Decimal = Decimal(0)
+        uncleared_total: Decimal = Decimal(0)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "SELECT statement has a cartesian product.*", exc.SAWarning
+            )
+            ledger = aliased(Ledger, flat=True)
+            transactions = (
+                session.query(Transaction)
+                .join(ledger, ledger.transaction_id == Transaction.id)
+                .filter(Transaction.currency_id == self.currency_id)
+                .filter(Transaction.transaction_date <= end_date)
+                .filter(
+                    or_(
+                        ledger.post_account_id == self.id,
+                        ledger.folio_account_id == self.id,
+                    )
+                )
+                .filter(Transaction.entity_id == self.entity_id)
+                .filter(Ledger.entity_id == self.entity_id)
+                .filter(Transaction.transaction_type.in_(Assignment.clearables))
+            )
+            balances = (
+                session.query(Balance)
+                .filter(Balance.account_id == self.id)
+                .filter(Balance.reporting_period_id == period_id)
+                .filter(Balance.entity_id == self.entity_id)
+                .order_by(Balance.transaction_date)
+                .all()
+            )
+
+            for transaction in list(balances) + list(
+                transactions.order_by(Transaction.transaction_date).distinct()
+            ):
+                # Every clearable Transaction type carries ClearingMixin via its STI
+                # subclass (ClientInvoice/SupplierBill/JournalEntry); the base does not
+                # declare it. assignment.py:166 asserts the same invariant.
+                cleared = cast("ClearingMixin", transaction).cleared(
+                    session, end_date=end_date
+                )
+                if transaction.amount - cleared == 0 or (
+                    transaction.transaction_type
+                    == Transaction.TransactionType.JOURNAL_ENTRY
+                    and (
+                        (
+                            self.account_type == Account.AccountType.RECEIVABLE
+                            and transaction.credited
+                        )
+                        or (
+                            self.account_type == Account.AccountType.PAYABLE
+                            and not transaction.credited
+                        )
+                    )
+                ):
+                    continue
+                row = ScheduleRow(
+                    entry=transaction,
+                    cleared_amount=cleared,
+                    uncleared_amount=transaction.amount - cleared,
+                    age=(end_date - transaction.transaction_date).days,
+                )
+                rows.append(row)
+                total_amount += transaction.amount
+                cleared_total += row.cleared_amount
+                uncleared_total += row.uncleared_amount
+
+        return OutstandingSchedule(
+            transactions=rows,
+            total_amount=total_amount,
+            cleared_amount=cleared_total,
+            uncleared_amount=uncleared_total,
+        )
+
+    def statement_running(
+        self,
+        session: "AccountingSession",
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> AccountStatement:
+        """
+        Gets a chronological listing of the Transactions posted to the Account between
+        the dates given, with their running balance and debit/credit contributions.
+
+        Args:
+            session (Session): The accounting session to which the Account belongs.
+            start_date (datetime): The earliest transaction date for Transaction amounts
+                to be included in the statement.
+            end_date (datetime): The latest transaction date for Transaction amounts to
+                be included in the statement.
+
+        Returns:
+            AccountStatement: The opening balance of the Account, its Transactions in
+            the period with their running balance and debit/credit contributions, and
+            the closing balance.
+        """
+        from python_accounting.models import (
+            Ledger,
+            Transaction,
+        )
+
+        start_date, end_date, _, _ = get_dates(session, start_date, end_date)
+        opening_balance = self.opening_balance(session, end_date.year)
+
+        rows: list[StatementRow] = []
+        balance: Decimal = opening_balance
+        closing_balance: Decimal = Decimal(0)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "SELECT statement has a cartesian product.*", exc.SAWarning
+            )
+            ledger = aliased(Ledger, flat=True)
+            transactions = (
+                session.query(Transaction)
+                .join(ledger, ledger.transaction_id == Transaction.id)
+                .filter(Transaction.currency_id == self.currency_id)
+                .filter(Transaction.transaction_date <= end_date)
+                .filter(
+                    or_(
+                        ledger.post_account_id == self.id,
+                        ledger.folio_account_id == self.id,
+                    )
+                )
+                .filter(Transaction.entity_id == self.entity_id)
+                .filter(Ledger.entity_id == self.entity_id)
+                .filter(Transaction.transaction_date >= start_date)
+                .order_by(Transaction.transaction_date)
+                .distinct()
+            )
+            for transaction in transactions:
+                contribution = transaction.contribution(session, self)
+                balance += contribution
+                debit, credit = (
+                    (Decimal(0), abs(contribution))
+                    if contribution < 0
+                    else (contribution, Decimal(0))
+                )
+                closing_balance = balance
+                rows.append(
+                    StatementRow(
+                        entry=transaction,
+                        balance=balance,
+                        debit=debit,
+                        credit=credit,
+                    )
+                )
+
+        return AccountStatement(
+            opening_balance=opening_balance,
+            transactions=rows,
+            closing_balance=closing_balance,
+        )
+
     def statement(
         self,
         session: "AccountingSession",
@@ -357,6 +613,11 @@ class Account(IsolatingMixin, Recyclable):
         """
         Gets a chronological listing of the Transactions posted to the Account between
             the dates given.
+
+        Legacy interface: delegates to :meth:`schedule_outstanding` (schedule mode) or
+        :meth:`statement_running` (statement mode) and restamps each row's computed
+        values onto its entry for backwards compatibility. New code should call the
+        typed methods directly.
 
         Args:
             session (Session): The accounting session to which the Account belongs.
@@ -386,124 +647,34 @@ class Account(IsolatingMixin, Recyclable):
                 - cleared_amount (Decimal): The amount of the Transactions in the Schdeule that has been cleared.
                 - uncleared_amount (Decimal): The amount of the Transactions in the Schdeule that is still outstanding.
         """
-        from python_accounting.models import (
-            Assignment,
-            Balance,
-            Ledger,
-            Transaction,
-        )
-
-        if schedule and self.account_type not in [
-            Account.AccountType.RECEIVABLE,
-            Account.AccountType.PAYABLE,
-        ]:
-            raise InvalidAccountTypeError(
-                "Only Receivable and Payable Accounts can have a statement/schedule."
-            )
-        start_date, end_date, _, period_id = get_dates(session, start_date, end_date)
-
-        statement: dict[str, Any] = (
-            {
-                "transactions": [],
-                "total_amount": 0,
-                "cleared_amount": 0,
-                "uncleared_amount": 0,
+        if schedule:
+            schedule_result = self.schedule_outstanding(session, end_date)
+            for row in schedule_result.transactions:
+                row.entry.cleared_amount = row.cleared_amount
+                row.entry.uncleared_amount = row.uncleared_amount
+                row.entry.age = row.age
+            return {
+                "transactions": [row.entry for row in schedule_result.transactions],
+                "total_amount": schedule_result.total_amount,
+                "cleared_amount": schedule_result.cleared_amount,
+                "uncleared_amount": schedule_result.uncleared_amount,
             }
-            if schedule
-            else {
-                "opening_balance": self.opening_balance(session, end_date.year),
-                "transactions": [],
-                "closing_balance": 0,
-            }
-        )
-        balances: list[Any] = []
-        balance: Decimal = Decimal(0)
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "SELECT statement has a cartesian product.*", exc.SAWarning
-            )
-            ledger = aliased(Ledger, flat=True)
-            transactions = (
-                session.query(Transaction)
-                .join(ledger, ledger.transaction_id == Transaction.id)
-                .filter(Transaction.currency_id == self.currency_id)
-                .filter(Transaction.transaction_date <= end_date)
-                .filter(
-                    or_(
-                        ledger.post_account_id == self.id,
-                        ledger.folio_account_id == self.id,
-                    )
-                )
-                .filter(Transaction.entity_id == self.entity_id)
-                .filter(Ledger.entity_id == self.entity_id)
-            )
-            if schedule:
-                transactions = transactions.filter(
-                    Transaction.transaction_type.in_(Assignment.clearables)
-                )
-
-                balances = (
-                    session.query(Balance)
-                    .filter(Balance.account_id == self.id)
-                    .filter(Balance.reporting_period_id == period_id)
-                    .filter(Balance.entity_id == self.entity_id)
-                    .order_by(Balance.transaction_date)
-                    .all()
-                )
-            else:
-                transactions = transactions.filter(
-                    Transaction.transaction_date >= start_date
-                )
-                balance = statement["opening_balance"]
-
-            for transaction in list(balances) + list(
-                transactions.order_by(Transaction.transaction_date).distinct()
-            ):
-                if schedule:
-                    cleared = transaction.cleared(session, end_date=end_date)
-                    if transaction.amount - cleared == 0 or (
-                        transaction.transaction_type
-                        == Transaction.TransactionType.JOURNAL_ENTRY
-                        and (
-                            (
-                                self.account_type == Account.AccountType.RECEIVABLE
-                                and transaction.credited
-                            )
-                            or (
-                                self.account_type == Account.AccountType.PAYABLE
-                                and not transaction.credited
-                            )
-                        )
-                    ):
-                        continue
-                    (
-                        transaction.cleared_amount,
-                        transaction.uncleared_amount,
-                        transaction.age,
-                    ) = (
-                        cleared,
-                        transaction.amount - cleared,
-                        (end_date - transaction.transaction_date).days,
-                    )
-                    statement["total_amount"] += transaction.amount
-                    statement["cleared_amount"] += transaction.cleared_amount
-                    statement["uncleared_amount"] += transaction.uncleared_amount
-                else:
-                    contribution = transaction.contribution(session, self)
-                    balance += contribution
-                    transaction.balance = balance
-
-                    transaction.debit, transaction.credit = (
-                        (0, abs(contribution))
-                        if contribution < 0
-                        else (contribution, 0)
-                    )
-                    statement["closing_balance"] = balance
-
-                statement["transactions"].append(transaction)
-
-        return statement
+        running_result = self.statement_running(session, start_date, end_date)
+        for statement_row in running_result.transactions:
+            entry = statement_row.entry
+            # The running-balance stamp cannot be declared on Transaction: the
+            # name collides with AssigningMixin.balance() across the MRO of the
+            # assigning subclasses. Set dynamically, as the legacy code did.
+            setattr(entry, "balance", statement_row.balance)  # noqa: B010
+            entry.debit = statement_row.debit
+            entry.credit = statement_row.credit
+        return {
+            "opening_balance": running_result.opening_balance,
+            "transactions": [
+                statement_row.entry for statement_row in running_result.transactions
+            ],
+            "closing_balance": running_result.closing_balance,
+        }
 
     def validate(self, session: "AccountingSession") -> None:
         """

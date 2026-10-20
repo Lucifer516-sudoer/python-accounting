@@ -163,14 +163,14 @@ def test_exhausted_source_still_evaluates_schedule(
 ):
     """An exhausted source still reaches the account's schedule validation boundary."""
     payment = _reserved_payment(session, invoices, post_document, fixed_today, "100")
-    original_statement = Account.statement
+    original_schedule = Account.schedule_outstanding
     calls = []
 
-    def statement(account, *args, **kwargs):
+    def schedule_outstanding(account, *args, **kwargs):
         calls.append(account.id)
-        return original_statement(account, *args, **kwargs)
+        return original_schedule(account, *args, **kwargs)
 
-    monkeypatch.setattr(Account, "statement", statement)
+    monkeypatch.setattr(Account, "schedule_outstanding", schedule_outstanding)
     assert payment.bulk_assign(session) is None
     assert calls == [invoices[0].id]
     assert len(payment.assignments(session)) == 1

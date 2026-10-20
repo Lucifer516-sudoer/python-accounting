@@ -20,7 +20,7 @@ from python_accounting.utils.dates import get_dates
 if TYPE_CHECKING:
     # Account.AccountType is a ClassVar on the mapped class and cannot be used as
     # a type expression (DECISIONS.md D-015), so the stub class is imported here.
-    from python_accounting.models.account import AccountType
+    from python_accounting.models.account import AccountType, ScheduleRow
 
 
 class AgingSchedule:
@@ -75,30 +75,30 @@ class AgingSchedule:
         self.balances = {k: 0 for k, v in self.brackets.items()}
         _, self.end_date, _, _ = get_dates(session, None, end_date)
 
-        for account, transactions in [
+        for account, schedule in [
             (
                 account,
-                account.statement(session, None, self.end_date, True)["transactions"],
+                account.schedule_outstanding(session, self.end_date),
             )
             for account in session.query(Account)
             .filter(Account.account_type == account_type)
             .filter(Account.entity_id == session.entity.id)
             .all()
         ]:
-            if transactions:
+            if schedule.transactions:
                 account.balances = {k: 0 for k, v in self.brackets.items()}
-                self._allocate_balances(transactions, account)
+                self._allocate_balances(schedule.transactions, account)
                 self.accounts.append(account)
 
     def __repr__(self) -> str:
         return f"{self.account_type} Aging Schedule as at {str(self.end_date)}"
 
-    def _allocate_balances(self, transactions: list, account: Account) -> None:
-        for transaction in transactions:
+    def _allocate_balances(self, rows: "list[ScheduleRow]", account: Account) -> None:
+        for row in rows:
             bracket = [
                 bracket
                 for bracket, max_age in self.brackets.items()
-                if transaction.age <= max_age
+                if row.age <= max_age
             ][0]
-            self.balances[bracket] += transaction.uncleared_amount
-            account.balances[bracket] += transaction.uncleared_amount
+            self.balances[bracket] += row.uncleared_amount
+            account.balances[bracket] += row.uncleared_amount

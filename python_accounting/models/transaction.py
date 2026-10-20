@@ -166,7 +166,11 @@ class Transaction(IsolatingMixin, Recyclable):
     )
     """(list): The Ledger models associated with the Transaction."""
 
-    # Attributes set dynamically during account statement generation (D-011)
+    # Attributes set dynamically during account statement generation (D-011).
+    # NOTE: the running-balance stamp is intentionally NOT declared here — the
+    # name collides with AssigningMixin.balance() across the MRO of the
+    # assigning Transaction subclasses, so Account.statement() sets it via
+    # setattr (see the shim in models/account.py).
     debit: Decimal
     """(Decimal): The debit amount of the Transaction in an Account statement."""
 

@@ -97,9 +97,8 @@ class AssigningMixin:
 
         balance = self.balance(session)
 
-        for clearable in self.account.statement(session, None, None, True)[
-            "transactions"
-        ]:
+        for row in self.account.schedule_outstanding(session).transactions:
+            clearable = row.entry
             if balance == 0:
                 break
 

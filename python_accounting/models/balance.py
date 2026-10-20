@@ -115,6 +115,17 @@ class Balance(IsolatingMixin, ClearingMixin, Recyclable):
 
     __mapper_args__ = {"polymorphic_identity": "Balance"}
 
+    # Allow the bare (non-Mapped) dynamic-attribute annotations below (D-011):
+    # the Account.statement() legacy shim stamps these onto Balance rows.
+    __allow_unmapped__ = True
+
+    cleared_amount: Decimal
+    """(Decimal): The amount of the Balance cleared as at the schedule end date."""
+    uncleared_amount: Decimal
+    """(Decimal): The amount of the Balance outstanding as at the schedule end date."""
+    age: int
+    """(int): The age of the Balance in days, as at the schedule end date."""
+
     id: Mapped[int] = mapped_column(ForeignKey("recyclable.id"), primary_key=True)
     """(int): The primary key of the Account database record."""
     transaction_date: Mapped[datetime] = mapped_column()
